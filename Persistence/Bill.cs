@@ -1,14 +1,14 @@
-using System;
-using System.Collections.Generic;
+﻿using System;
 
-namespace Persistence {
-    public class Bill {
-        public uint Id { get; set; }
-        public uint Cashier_Id { get; set; }
-        public DateTime Created_Date { get; set; }
-        public List<uint> Order_Id { get; set; }
+namespace Persistence
+{
+    public class Bill
+    {
+        public int Id { get; set; }
+        public int Cashier_id { get; set; }
+        public DateTime Created_date { get; set; }
 
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
             if (obj is Bill bill)
                 return bill.Id == Id;
 
