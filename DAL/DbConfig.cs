@@ -11,7 +11,8 @@ namespace DAL {
             return Con;
         }
 
-        public static MySqlConnection GetConnection() {
+        public static MySqlConnection GetConnection()
+        {
             try { Con.ConnectionString = File.ReadAllText("DbConfig.txt"); }
             catch {}
 

@@ -5,14 +5,16 @@ namespace Persistence {
         public int Good_id { get; set; }
         public int Quantity { get; set; }
 
-        public override bool Equals(object? obj) {
+        public override bool Equals(object? obj)
+        {
             if (obj is Order order)
                 return order.Id == Id;
             
             return false;
         }
 
-        public override int GetHashCode() {
+        public override int GetHashCode()
+        {
             return Id.GetHashCode();
         }
     }
