@@ -78,7 +78,7 @@ namespace ConsoleApp
                         break;
 
                     case 3:
-                        running = true;
+                        running = false;
                         break;
                     
                     case 4:
