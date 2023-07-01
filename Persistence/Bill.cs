@@ -7,6 +7,7 @@ namespace Persistence
         public int Id { get; set; }
         public int Cashier_id { get; set; }
         public DateTime Created_date { get; set; }
+        // public string Customer_name { get; set; }
 
         public override bool Equals(object? obj)
         {

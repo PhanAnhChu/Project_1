@@ -74,7 +74,8 @@ namespace DAL
                 {
                     Id = reader.GetInt32("id"),
                     Cashier_id = reader.GetInt32("cashier_id"),
-                    Created_date = reader.GetDateTime("created_date")
+                    Created_date = reader.GetDateTime("created_date"),
+                    // Customer_name = reader.GetString("customer_name")
                 };
 
                 list.Add(bill);
@@ -100,6 +101,7 @@ namespace DAL
                     MySqlCommand cmd = new(query, Con);
                     cmd.Parameters.AddWithValue("@c_id", id);
                     cmd.Parameters.AddWithValue("@date", DateTime.Now); // .ToString("yyyy-MM-dd")
+                    // cmd.Parameters.AddWithValue("@name", bill.Customer_name);
 
                     cmd.Prepare();
                     cmd.ExecuteNonQuery();
@@ -109,7 +111,8 @@ namespace DAL
                         return true;
                     }
 
-                    throw new Exception();
+                    tran.Rollback();
+                    return false;
                 }
                 catch // (Exception ex)
                 {
