@@ -24,24 +24,24 @@ namespace ConsoleApp
             // Check the current time to prepare for the next shift
             if (now < startTime1) {
                 timer = new(startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShift(timer, shift);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift);
                 timer.Start();
             }
             else if (now < startTime2) {
                 shift.Value = 1;
                 timer = new(startTime2 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShift(timer, shift, 2);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 2);
                 timer.Start();
             }
             else if (now < endTime) {
                 shift.Value = 2;
                 timer = new(endTime - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShift(timer, shift, 0);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 0);
                 timer.Start();
             }
             else {
                 timer = new(new TimeSpan(24, 0, 0) + startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShift(timer, shift);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift);
                 timer.Start();
             }
 
@@ -64,7 +64,7 @@ namespace ConsoleApp
                         ChooseShiftScreen();
                         int cmd = ReadCmd(end: 2); // Only return -1, 1 or 2
 
-                        if (cmd == -1) { // User enter 'Esc' => return -1 => Back to Main Menu
+                        if (cmd == int.MinValue) { // User enter 'Esc' => return int.MinValue => Back to Main Menu
                             screen = 0;
                             break;
                         }
@@ -88,7 +88,7 @@ namespace ConsoleApp
                                         else
                                             Alert("Invalid login time! Please try again later.", 4, 27, ConsoleColor.Red);
                                     }
-                                    else if (now.Add(new(0, 15, 0)) >= startTime2 && now < endTime)
+                                    else if (now.Add(new(0, 15, 0)) >= startTime2 && now < endTime) // If code reach this block, then 'cmd' must be 2 already
                                     {
                                         list2.Add(cashier);
                                         screen = 0;
@@ -97,7 +97,7 @@ namespace ConsoleApp
                                     else
                                         Alert("Invalid login time! Please try again later.", 4, 27, ConsoleColor.Red);
 
-                                    break;
+                                    break; // Break from the login screen if the account is valid
                                 }
                                 else if (Alert("ACCOUNT NOT FOUND!", 4, 27, ConsoleColor.Red) == ConsoleKey.Escape)
                                     break;
@@ -110,11 +110,16 @@ namespace ConsoleApp
                     case 2: // Create Bill
                         if (shift.Value == 1) {
                             if (list1.Count > 0) { // Check if anyone is in the system first
-                                Alert("Choose your name:", interrupt: false, clrscr: true);
-                                PrintCashierList(list1);
+                                Cashier? cashier = ChooseCashierScreen(list1);
 
-                                Console.ReadKey();
-                                screen = 0;
+                                if (cashier == null)
+                                    screen = 0;
+                                else {
+                                    CreateBillScreen(cashier);
+                                    screen = 0;
+                                    Console.ReadKey();
+                                    break;
+                                }
                             }
                             else {
                                 screen = 0;
@@ -122,16 +127,21 @@ namespace ConsoleApp
                             }
                         }
                         else if (shift.Value == 2) {
-                            if (list1.Count > 0 || list2.Count == 0) { // Anyone in list1 must be logged out
+                            if (list1.Count > 0 || list2.Count == 0) { // Anyone in list1 must be logged out first
                                 screen = 0;
                                 Alert("No one has logged in the shift yet, please login.", 25, 14, ConsoleColor.Yellow, clrscr: true);
                             }
                             else {
-                                Alert("Choose your name:", interrupt: false, clrscr: true);
-                                PrintCashierList(list2);
+                                Cashier? cashier = ChooseCashierScreen(list2);
 
-                                Console.ReadKey();
-                                screen = 0;
+                                if (cashier == null)
+                                    screen = 0;
+                                else {
+                                    CreateBillScreen(cashier);
+                                    screen = 0;
+                                    Console.ReadKey();
+                                    break;
+                                }
                             }
                         }
                         else {
@@ -155,7 +165,7 @@ namespace ConsoleApp
             }
         }
 
-        static void ChangeShift(Timer timer, Shift shift, int value = 1) {
+        static void ChangeShiftValue(Timer timer, Shift shift, int value = 1) {
             timer.Stop();
             timer.Dispose();
 
@@ -164,25 +174,40 @@ namespace ConsoleApp
 
             if (value == 1) {
                 timer = new(startTime2 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShift(timer, shift, 2);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 2);
                 timer.Start();
             }
             else if (value == 2) {
                 timer = new(endTime - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShift(timer, shift, 0);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 0);
                 timer.Start();
             }
             else {
                 timer = new(new TimeSpan(24, 0, 0) + startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShift(timer, shift, 1);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 1);
                 timer.Start();
             }
+        }
+
+        public static void MainMenu()
+        {
+            Console.Clear();
+            Console.Write("\n\n\n");
+            Console.WriteLine("                  ██████  █████  ███████ ██   ██ ██ ███████ ██████      ███    ███ ███████ ███    ██ ██    ██");
+            Console.WriteLine("                 ██      ██   ██ ██      ██   ██ ██ ██      ██   ██     ████  ████ ██      ████   ██ ██    ██");
+            Console.WriteLine("                 ██      ███████ ███████ ███████ ██ █████   ██████      ██ ████ ██ █████   ██ ██  ██ ██    ██");
+            Console.WriteLine("                 ██      ██   ██      ██ ██   ██ ██ ██      ██   ██     ██  ██  ██ ██      ██  ██ ██ ██    ██");
+            Console.WriteLine("                  ██████ ██   ██ ███████ ██   ██ ██ ███████ ██   ██     ██      ██ ███████ ██   ████  ██████\n\n\n");
+
+            PrintButton("1. Login", 50, 38);
+            PrintButton("2. Create Bill", 50, 38);
+            PrintButton("3. View History Transaction", 50, 38);
+            PrintButton("4. Report Shift", 50, 38);
         }
 
         static int ReadCmd(int start = 1, int end = 4)
         {
             Console.CursorVisible = false;
-
             ConsoleKeyInfo c;
             
             while (true) {
@@ -196,24 +221,8 @@ namespace ConsoleApp
                     return i;
                 }
                 else if (c.Key == ConsoleKey.Escape)
-                    return -1;
+                    return int.MinValue;
             }
-        }
-
-        public static void PrintButton(string text, int B_length, int padleft = 0)
-        {
-            string str = new('═', B_length - 2);
-            if (text.Length > B_length - 2)
-                B_length = text.Length + 4;
-
-            int PadLeft = (B_length + text.Length) / 2 - 1;
-            int PadRight = B_length - 2 - PadLeft;
-
-            string pad = new(' ', padleft);
-
-            Console.WriteLine($"{pad}╔{str}╗");
-            Console.WriteLine($"{pad}║{text.PadLeft(PadLeft)}{new string(' ', PadRight)}║");
-            Console.WriteLine($"{pad}╚{str}╝");
         }
 
         public static ConsoleKey? Alert(string alert, int left = 3, int top = 3, ConsoleColor color = ConsoleColor.Green, bool interrupt = true, bool clrscr = false)
@@ -234,20 +243,20 @@ namespace ConsoleApp
             return null;
         }
 
-        public static void MainMenu()
+        public static void PrintButton(string text, int B_length, int padleft = 0)
         {
-            Console.Clear();
-            Console.Write("\n\n\n");
-            Console.WriteLine("                  ██████  █████  ███████ ██   ██ ██ ███████ ██████      ███    ███ ███████ ███    ██ ██    ██");
-            Console.WriteLine("                 ██      ██   ██ ██      ██   ██ ██ ██      ██   ██     ████  ████ ██      ████   ██ ██    ██");
-            Console.WriteLine("                 ██      ███████ ███████ ███████ ██ █████   ██████      ██ ████ ██ █████   ██ ██  ██ ██    ██");
-            Console.WriteLine("                 ██      ██   ██      ██ ██   ██ ██ ██      ██   ██     ██  ██  ██ ██      ██  ██ ██ ██    ██");
-            Console.WriteLine("                  ██████ ██   ██ ███████ ██   ██ ██ ███████ ██   ██     ██      ██ ███████ ██   ████  ██████\n\n\n");
+            string str = new('═', B_length - 2);
+            if (text.Length > B_length - 2)
+                B_length = text.Length + 4;
 
-            PrintButton("1. Login", 50, 38);
-            PrintButton("2. Create Bill", 50, 38);
-            PrintButton("3. View History Transaction", 50, 38);
-            PrintButton("4. Report Shift", 50, 38);
+            int PadLeft = (B_length + text.Length) / 2 - 1;
+            int PadRight = B_length - 2 - PadLeft;
+
+            string pad = new(' ', padleft);
+
+            Console.WriteLine($"{pad}╔{str}╗");
+            Console.WriteLine($"{pad}║{text.PadLeft(PadLeft)}{new string(' ', PadRight)}║");
+            Console.WriteLine($"{pad}╚{str}╝");
         }
 
         public static void ChooseShiftScreen()
@@ -262,6 +271,7 @@ namespace ConsoleApp
 
         public static string? GetStrCharByChar()
         {
+            Console.CursorVisible = true;
             Stack<char> chars = new();
             ConsoleKeyInfo key;
             while (true)
@@ -307,7 +317,7 @@ namespace ConsoleApp
             Console.WriteLine("                        ╔═══════════════════════════════════════════════════╗");
             Console.WriteLine("                        ║ Password:                                         ║");
             Console.WriteLine("                        ╚═══════════════════════════════════════════════════╝\n\n\n");
-            Console.WriteLine("                                --- Enter 'esc' button to go back ---");
+            Console.Write("                                --- Enter 'esc' button to go back ---");
 
 
             Console.SetCursorPosition(36, 15);
@@ -323,36 +333,53 @@ namespace ConsoleApp
             return new string[2] {username, password};
         }
 
+        public static Cashier? ChooseCashierScreen(List<Cashier> cashiers) {
+            while (true) {
+                Console.Clear();
+                Console.Write("\n                                --- Enter 'esc' button to go back ---");
+                Alert("Enter your Cashier Id:", interrupt: false);
+
+                string str = $"+----+{new string('-', 34)}+";
+
+                // Print out the cashiers table
+                Console.WriteLine(str);
+                Console.WriteLine($"| Id |               {"Name", -19}|");
+                Console.WriteLine(str);
+
+                foreach (Cashier cashier in cashiers)
+                    Console.WriteLine($"| {cashier.Id, -3}| {cashier.Name, -33}|");
+
+                Console.WriteLine(str);
+
+                Console.SetCursorPosition(26, 3);
+                string? cmd = GetStrCharByChar();
+
+                if (cmd == null)
+                    return null;
+                else {
+                    if (int.TryParse(cmd, out int id)) {
+                        Cashier? cashier = cashiers.FirstOrDefault(c => c.Id == id);
+                        if (cashier != null)
+                            return cashier;
+                    }
+                    Alert("Invalid Id, Please try again.", 3, 10 + cashiers.Count, ConsoleColor.Red);
+                }
+            }
+        }
+
         public static void CreateBillScreen(Cashier cashier) {
+            Console.Clear();
+            Console.Write("\n\n\n");
             Console.WriteLine("                                    ██████  ██ ██      ██");
             Console.WriteLine("                                    ██   ██ ██ ██      ██");
             Console.WriteLine("                                    ██████  ██ ██      ██");
             Console.WriteLine("                                    ██   ██ ██ ██      ██");
             Console.WriteLine("                                    ██████  ██ ███████ ███████\n\n\n");
             Console.WriteLine($"Cashier: {cashier.Name}\n");
-            
-
-        }
-
-        public static void PrintCashierList(List<Cashier> list) {
-            string str = $"+----+{new string('-', 34)}+";
-
-            Console.WriteLine(str);
-            Console.WriteLine($"| Id |               {"Name", -19}|");
-            Console.WriteLine(str);
-
-            foreach (Cashier cashier in list)
-                Console.WriteLine($"| {cashier.Id, -3}| {cashier.Name, -33}|");
-
-            Console.WriteLine(str);
         }
 
         public static void PrintBillList(List<Bill> list) {
             string str = $"+-----+{new string('-', 34)}+";
-        }
-
-        public static Cashier? GetCashierById(List<Cashier> cashiers, int id) {
-            return cashiers.FirstOrDefault(c => c.Id == id);
         }
     }
 }
