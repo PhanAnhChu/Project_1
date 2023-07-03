@@ -8,7 +8,6 @@ namespace DAL
     {
         string? query;
         public MySqlConnection Con = DbConfig.GetConnection();
-        public MySqlDataReader? Reader;
 
         public Cashier? GetCashierByLogin(string username, string password)
         {
@@ -26,7 +25,7 @@ namespace DAL
 
                 cmd.Prepare();
 
-                Reader = cmd.ExecuteReader();
+                using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetCashiers(Reader)[0];
             }
             catch // (Exception ex)
@@ -36,7 +35,6 @@ namespace DAL
             finally
             {
                 Con.Close();
-                Reader?.Close();
             }
             return null;
         }
@@ -53,7 +51,7 @@ namespace DAL
 
                 cmd.Prepare();
 
-                Reader = cmd.ExecuteReader();
+                using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetCashiers(Reader);
             }
             catch // (Exception ex)
@@ -63,7 +61,6 @@ namespace DAL
             finally
             {
                 Con.Close();
-                Reader?.Close();
             }
             return new List<Cashier>();
         }

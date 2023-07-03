@@ -8,7 +8,6 @@ namespace DAL
     {
         string? query;
         public MySqlConnection Con = DbConfig.GetConnection();
-        public MySqlDataReader? Reader;
 
         public Order? GetOrderById(int id)
         {
@@ -22,7 +21,7 @@ namespace DAL
 
                 cmd.Prepare();
 
-                Reader = cmd.ExecuteReader();
+                using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetOrders(Reader)[0];
             }
             catch // (Exception ex)
@@ -32,7 +31,6 @@ namespace DAL
             finally
             {
                 Con.Close();
-                Reader?.Close();
             }
             return null;
         }
@@ -71,7 +69,7 @@ namespace DAL
 
                 cmd.Prepare();
 
-                Reader = cmd.ExecuteReader();
+                using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetOrders(Reader);
             }
             catch // (Exception ex)
@@ -81,7 +79,6 @@ namespace DAL
             finally
             {
                 Con.Close();
-                Reader?.Close();
             }
             return new List<Order>();
         }

@@ -113,25 +113,22 @@ namespace ConsoleApp
                     case 2: // Create Bill
                         if (shift.Value == 1) {
                             if (list1.Count > 0) { // Check if anyone is in the system first
-                                Cashier? cashier = ChooseCashierScreen(list1);
+                                Cashier? cashier = ChooseCashierScreen(list1); // Only null if User enter 'Esc' => Back to Main Menu
 
                                 if (cashier != null) {
                                     CreateBillScreen(cashier);
                                     Console.ReadKey();
                                     break;
                                 }
-                                screen = 0;
                             }
-                            else {
-                                screen = 0;
+                            else
                                 Alert("No one has logged in the shift yet, please login.", 25, 14, ConsoleColor.Yellow, cls: true);
-                            }
                         }
                         else if (shift.Value == 2) {
-                            if (list1.Count > 0 || list2.Count == 0) { // Anyone in list1 must be logged out first
-                                screen = 0;
-                                Alert("Cashier from previous shift must log out, please login.", 25, 14, ConsoleColor.Yellow, cls: true);
-                            }
+                            if (list1.Count > 0) // Anyone in list1 must be logged out first
+                                Alert("Cashier from previous shift must log out first.", 25, 14, ConsoleColor.Yellow, cls: true);
+                            else if (list2.Count == 0)
+                                Alert("No one has logged in the shift yet, please login.", 25, 14, ConsoleColor.Yellow, cls: true);
                             else {
                                 Cashier? cashier = ChooseCashierScreen(list2);
 
@@ -140,14 +137,12 @@ namespace ConsoleApp
                                     Console.ReadKey();
                                     break;
                                 }
-                                screen = 0;
                             }
                         }
-                        else {
-                            screen = 0;
+                        else
                             Alert("The shift is not started yet.", 30, 14, ConsoleColor.Yellow, cls: true);
-                        }
 
+                        screen = 0;
                         break;
 
                     case 3:
@@ -155,11 +150,23 @@ namespace ConsoleApp
                         break;
 
                     case 4:
-                        if ((shift.Value == 2 && reportCount == 0) || (shift.Value == 0 && reportCount == 1)) {
-                            DateTime t = timeLog;
-                            timeLog = DateTime.Now;
-                            sbll.AddShift(t, timeLog);
-                            ++reportCount;
+                        if (shift.Value == 2 && reportCount == 0) {
+                            if (sbll.AddShift(timeLog, DateTime.Now)) {
+                                ++reportCount;
+                                list1.Clear();
+                                timeLog = DateTime.Now;
+                            }
+                            else
+                                Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
+                        }
+                        else if (shift.Value == 0 && reportCount == 1) {
+                            if (sbll.AddShift(timeLog, DateTime.Now)) {
+                                --reportCount;
+                                list2.Clear();
+                                timeLog = DateTime.Now;
+                            }
+                            else
+                                Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
                         }
                         else
                             Alert("Invalid report time! Please try again later.", 28, 14, ConsoleColor.Yellow, cls: true);
@@ -388,10 +395,6 @@ namespace ConsoleApp
             Console.WriteLine("                                    ██   ██ ██ ██      ██");
             Console.WriteLine("                                    ██████  ██ ███████ ███████\n\n\n");
             Console.WriteLine($"Cashier: {cashier.Name}\n");
-        }
-
-        public static void PrintBillList(List<Bill> list) {
-            string str = $"+-----+{new string('-', 34)}+";
         }
     }
 }
