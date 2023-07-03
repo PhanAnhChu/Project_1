@@ -15,7 +15,7 @@ namespace DAL
             try
             {
                 Con.Open();
-                query = "SELECT * FROM Orders WHERE Id = @id";
+                query = "SELECT * FROM Orders WHERE Id = @id LIMIT 1";
 
                 MySqlCommand cmd = new(query, Con);
                 cmd.Parameters.AddWithValue("@id", id);

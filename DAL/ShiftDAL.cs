@@ -7,7 +7,7 @@ namespace DAL {
         public MySqlConnection Con = DbConfig.GetConnection();
         public MySqlDataReader? Reader;
 
-        public bool AddShift() {
+        public bool AddShift(DateTime startTime, DateTime endTime) {
             try
             {
                 Con.Open();
@@ -18,8 +18,8 @@ namespace DAL {
                     query = "INSERT INTO Shifts(start_time, end_time) VALUES (@start, @end);";
 
                     MySqlCommand cmd = new(query, Con);
-                    cmd.Parameters.AddWithValue("@start", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@date", DateTime.Now.AddHours(7));
+                    cmd.Parameters.AddWithValue("@start", startTime);
+                    cmd.Parameters.AddWithValue("@date", endTime);
 
                     cmd.Prepare();
                     cmd.ExecuteNonQuery();
