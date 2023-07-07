@@ -1,3 +1,3 @@
-class Shift {
+class ShiftValue {
     public int Value { get; set; }
 }

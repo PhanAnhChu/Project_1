@@ -1,6 +1,8 @@
 ﻿using MySql.Data.MySqlClient;
 using Persistence;
+using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace DAL
 {
@@ -24,15 +26,14 @@ namespace DAL
                 using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetOrders(Reader)[0];
             }
-            catch // (Exception ex)
+            catch (Exception ex)
             {
-                // Console.WriteLine(ex.Message);
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return null;
             }
-            finally
-            {
+            finally {
                 Con.Close();
             }
-            return null;
         }
 
         public static List<Order> GetOrders(MySqlDataReader reader)
@@ -72,15 +73,14 @@ namespace DAL
                 using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetOrders(Reader);
             }
-            catch // (Exception ex)
+            catch (Exception ex)
             {
-                // Console.WriteLine(ex.Message);
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return new();
             }
-            finally
-            {
+            finally {
                 Con.Close();
             }
-            return new List<Order>();
         }
 
         public bool AddOrders(List<Order> orders, int bill_id)
@@ -89,10 +89,10 @@ namespace DAL
             {
                 Con.Open();
 
-                query = "INSERT INTO Orders(bill_id, good_id, quantity) ";
+                query = "INSERT INTO Orders(bill_id, good_id, quantity) VALUES ";
 
                 foreach (Order order in orders)
-                    query += $"VALUES ({bill_id}, {order.Good_id}, {order.Quantity}), ";
+                    query += $"({bill_id}, {order.Good_id}, {order.Quantity}), ";
 
                 MySqlCommand cmd = new(query.Remove(query.Length - 2), Con);
 
@@ -101,12 +101,14 @@ namespace DAL
 
                 return true;
             }
-            catch // (Exception ex)
+            catch (Exception ex)
             {
-                // Console.WriteLine(ex.Message);
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return false;
             }
-
-            return false;
+            finally {
+                Con.Close();
+            }
         }
     }
 }

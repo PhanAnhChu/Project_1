@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using MySql.Data.MySqlClient;
 using Persistence;
 
@@ -22,15 +24,14 @@ namespace DAL {
                 using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetGoods(Reader)[0];
             }
-            catch // (Exception ex)
+            catch (Exception ex)
             {
-                // Console.WriteLine(ex.Message);
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return null;
             }
-            finally
-            {
+            finally {
                 Con.Close();
             }
-            return null;
         }
 
         public static List<Good> GetGoods(MySqlDataReader reader) {

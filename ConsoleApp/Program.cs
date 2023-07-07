@@ -19,30 +19,30 @@ namespace ConsoleApp
 
         public static void Main()
         {
-            Shift shift = new() { Value = 0 };
+            ShiftValue shiftValue = new() { Value = 0 };
             Timer timer;
 
             // Check the current time to prepare for the next shift
             if (now < startTime1) {
                 timer = new(startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, record: true);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shiftValue, record: true);
                 timer.Start();
             }
             else if (now < startTime2) {
-                shift.Value = 1;
+                shiftValue.Value = 1;
                 timer = new(startTime2 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 2, true);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shiftValue, 2, true);
                 timer.Start();
             }
             else if (now < endTime) {
-                shift.Value = 2;
+                shiftValue.Value = 2;
                 timer = new(endTime - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 0);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shiftValue, 0);
                 timer.Start();
             }
             else {
                 timer = new(new TimeSpan(24, 0, 0) + startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, record: true);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shiftValue, record: true);
                 timer.Start();
             }
 
@@ -52,7 +52,6 @@ namespace ConsoleApp
             ShiftBLL sbll = new(); // Do things with Shift
             List<Cashier> list1 = new(); // Store cashiers who login to shift 1
             List<Cashier> list2 = new(); // Same, but shift 2
-            int reportCount = 0;
 
             while (running)
             {
@@ -111,7 +110,7 @@ namespace ConsoleApp
                         break;
 
                     case 2: // Create Bill
-                        if (shift.Value == 1) {
+                        if (shiftValue.Value == 1) {
                             if (list1.Count > 0) { // Check if anyone is in the system first
                                 Cashier? cashier = ChooseCashierScreen(list1); // Only null if User enter 'Esc' => Back to Main Menu
 
@@ -124,7 +123,7 @@ namespace ConsoleApp
                             else
                                 Alert("No one has logged in the shift yet, please login.", 25, 14, ConsoleColor.Yellow, cls: true);
                         }
-                        else if (shift.Value == 2) {
+                        else if (shiftValue.Value == 2) {
                             if (list1.Count > 0) // Anyone in list1 must be logged out first
                                 Alert("Cashier from previous shift must log out first.", 25, 14, ConsoleColor.Yellow, cls: true);
                             else if (list2.Count == 0)
@@ -150,23 +149,31 @@ namespace ConsoleApp
                         break;
 
                     case 4:
-                        if (shift.Value == 2 && reportCount == 0) {
-                            if (sbll.AddShift(timeLog, DateTime.Now)) {
-                                ++reportCount;
-                                list1.Clear();
-                                timeLog = DateTime.Now;
+                        if (shiftValue.Value == 2 && list1.Count > 0) {
+                            Cashier? cashier = ChooseCashierScreen(list1);
+
+                            if (cashier != null) {
+                                if (sbll.AddShift(timeLog, DateTime.Now, cashier.Id, 299.99f, 300f)) {
+                                    list1.Clear();
+                                    timeLog = DateTime.Now;
+                                    Alert("Report successfully!", 40, 14, cls: true);
+                                }
+                                else
+                                    Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
                             }
-                            else
-                                Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
                         }
-                        else if (shift.Value == 0 && reportCount == 1) {
-                            if (sbll.AddShift(timeLog, DateTime.Now)) {
-                                --reportCount;
-                                list2.Clear();
-                                timeLog = DateTime.Now;
+                        else if (shiftValue.Value == 0 && list2.Count > 0) {
+                            Cashier? cashier = ChooseCashierScreen(list2);
+
+                            if (cashier != null) {
+                                if (sbll.AddShift(timeLog, DateTime.Now, cashier.Id, 299.99f, 300f)) {
+                                    list2.Clear();
+                                    timeLog = DateTime.Now;
+                                    Alert("Report successfully!", 40, 14, cls: true);
+                                }
+                                else
+                                    Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
                             }
-                            else
-                                Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
                         }
                         else
                             Alert("Invalid report time! Please try again later.", 28, 14, ConsoleColor.Yellow, cls: true);
@@ -180,11 +187,11 @@ namespace ConsoleApp
             }
         }
 
-        static void ChangeShiftValue(Timer timer, Shift shift, int value = 1, bool record = false) {
+        static void ChangeShiftValue(Timer timer, ShiftValue shiftValue, int value = 1, bool record = false) {
             timer.Stop();
             timer.Dispose();
 
-            shift.Value = value;
+            shiftValue.Value = value;
 
             if (record)
                 timeLog = DateTime.Now;
@@ -193,17 +200,17 @@ namespace ConsoleApp
 
             if (value == 1) {
                 timer = new(startTime2 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 2);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shiftValue, 2);
                 timer.Start();
             }
             else if (value == 2) {
                 timer = new(endTime - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 0);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shiftValue, 0);
                 timer.Start();
             }
             else {
                 timer = new(new TimeSpan(24, 0, 0) + startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 1);
+                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shiftValue);
                 timer.Start();
             }
         }

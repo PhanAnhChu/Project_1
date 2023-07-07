@@ -2,6 +2,7 @@
 using Persistence;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace DAL
 {
@@ -25,15 +26,14 @@ namespace DAL
                 using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetBills(Reader)[0];
             }
-            catch // (Exception ex)
+            catch (Exception ex)
             {
-                // Console.WriteLine(ex.Message);
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return null;
             }
-            finally
-            {
+            finally {
                 Con.Close();
             }
-            return null;
         }
 
         public List<Bill> GetBills(int page)
@@ -51,15 +51,37 @@ namespace DAL
                 using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetBills(Reader);
             }
-            catch // (Exception ex)
+            catch (Exception ex)
             {
-                // Console.WriteLine(ex.Message);
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return new();
             }
-            finally
-            {
+            finally {
                 Con.Close();
             }
-            return new List<Bill>();
+        }
+
+        public List<Bill> GetBillsFromShift(Shift shift) {
+            try {
+                Con.Open();
+                query = @"SELECT * FROM Bills WHERE Bills.created_date BETWEEN @start AND @end";
+
+                MySqlCommand cmd = new(query, Con);
+                cmd.Parameters.AddWithValue("@start", shift.StartTime);
+                cmd.Parameters.AddWithValue("@end", shift.EndTime);
+
+                cmd.Prepare();
+
+                using MySqlDataReader Reader = cmd.ExecuteReader();
+                return GetBills(Reader);
+            }
+            catch (Exception ex) {
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return new();
+            }
+            finally {
+                Con.Close();
+            }
         }
 
         public static List<Bill> GetBills(MySqlDataReader reader)
@@ -108,21 +130,51 @@ namespace DAL
                         return true;
                     }
 
-                    tran.Rollback();
-                    return false;
+                    throw new Exception("Add orders failed!");
                 }
-                catch // (Exception ex)
+                catch
                 {
                     tran.Rollback();
-                    return false;
+                    throw;
                 }
             } 
-            catch
+            catch (Exception ex)
             {
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
                 return false;
             }
             finally
             {
+                Con.Close();
+            }
+        }
+
+        public float CheckTotalPrice(int bill_id) {
+            try {
+                Con.Open();
+                query = @"SELECT SUM(goods.price * orders.quantity) AS total
+                          FROM orders
+                          JOIN goods ON orders.good_id = goods.id
+                          WHERE orders.bill_id = @id;";
+
+                MySqlCommand cmd = new(query, Con);
+                cmd.Parameters.AddWithValue("@id", bill_id);
+
+                cmd.Prepare();
+                float result = float.MinValue;
+                using MySqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read()) {
+                    result = reader.GetFloat("total");
+                }
+
+                return result;
+            }
+            catch (Exception ex) {
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return float.MinValue;
+            }
+            finally {
                 Con.Close();
             }
         }

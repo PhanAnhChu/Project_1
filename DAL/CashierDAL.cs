@@ -1,6 +1,8 @@
 ﻿using MySql.Data.MySqlClient;
 using Persistence;
+using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace DAL
 {
@@ -28,15 +30,14 @@ namespace DAL
                 using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetCashiers(Reader)[0];
             }
-            catch // (Exception ex)
+            catch (Exception ex)
             {
-                // Console.WriteLine(ex.Message);
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return null;
             }
-            finally
-            {
+            finally {
                 Con.Close();
             }
-            return null;
         }
 
         public List<Cashier> GetCashiers(int page)
@@ -54,15 +55,14 @@ namespace DAL
                 using MySqlDataReader Reader = cmd.ExecuteReader();
                 return GetCashiers(Reader);
             }
-            catch // (Exception ex)
+            catch (Exception ex)
             {
-                // OPTIONAL CODE
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return new();
             }
-            finally
-            {
+            finally {
                 Con.Close();
             }
-            return new List<Cashier>();
         }
 
         public static List<Cashier> GetCashiers(MySqlDataReader reader)
