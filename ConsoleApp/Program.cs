@@ -41,14 +41,14 @@ namespace ConsoleApp
                             break;
                         }
 
-                        while (true) {
-                            string[]? strs = OpenLoginScreen(cmd); // Return null if User enter 'Esc'
-                            if (strs != null)
-                            {
-                                Cashier? cashier = cbll.GetCashierByLogin(strs[0], strs[1]);
-                                if (cashier != null)
+                        if (IsLoginTime(cmd)) { // If currently is not valid time to login, alert user immediately
+                            while (true) {
+                                string[]? strs = OpenLoginScreen(cmd); // Return null if User enter 'Esc'
+                                if (strs != null)
                                 {
-                                    if (IsLoginTime(cmd)) {
+                                    Cashier? cashier = cbll.GetCashierByLogin(strs[0], strs[1]);
+                                    if (cashier != null)
+                                    {
                                         if (cmd == 1)
                                             list1.Add(cashier);
                                         else
@@ -56,17 +56,16 @@ namespace ConsoleApp
 
                                         screen = 0;
                                         Alert($"Login successfully. Hello {cashier.Name}.", 4, 27);
+                                        break;
                                     }
-                                    else
-                                        Alert("Invalid login time! Please try again later.", 4, 27, ConsoleColor.Red);
-
-                                    break;
+                                    else if (Alert("ACCOUNT NOT FOUND!", 4, 27, ConsoleColor.Red) == ConsoleKey.Escape)
+                                        break;
                                 }
-                                else if (Alert("ACCOUNT NOT FOUND!", 4, 27, ConsoleColor.Red) == ConsoleKey.Escape)
-                                    break;
+                                else break;
                             }
-                            else break; // User enter 'Esc' => break => Back to Main Menu
                         }
+                        else
+                            Alert("Invalid login time! Please try again later.", 4, 18, ConsoleColor.Red);
 
                         break;
 
@@ -167,22 +166,20 @@ namespace ConsoleApp
             }
         }
 
-        public static int MainMenu()
+        public static void PrintButton(string text, int B_length, int padleft = 0)
         {
-            Console.Clear();
-            Console.Write("\n\n\n");
-            Console.WriteLine("                  ██████  █████  ███████ ██   ██ ██ ███████ ██████      ███    ███ ███████ ███    ██ ██    ██");
-            Console.WriteLine("                 ██      ██   ██ ██      ██   ██ ██ ██      ██   ██     ████  ████ ██      ████   ██ ██    ██");
-            Console.WriteLine("                 ██      ███████ ███████ ███████ ██ █████   ██████      ██ ████ ██ █████   ██ ██  ██ ██    ██");
-            Console.WriteLine("                 ██      ██   ██      ██ ██   ██ ██ ██      ██   ██     ██  ██  ██ ██      ██  ██ ██ ██    ██");
-            Console.WriteLine("                  ██████ ██   ██ ███████ ██   ██ ██ ███████ ██   ██     ██      ██ ███████ ██   ████  ██████\n\n\n");
+            string str = new('═', B_length - 2);
+            if (text.Length > B_length - 2)
+                B_length = text.Length + 4;
 
-            PrintButton("1. Login", 50, 38);
-            PrintButton("2. Create Bill", 50, 38);
-            PrintButton("3. View History Transaction", 50, 38);
-            PrintButton("4. Report Shift", 50, 38);
+            int PadLeft = (B_length + text.Length) / 2 - 1;
+            int PadRight = B_length - 2 - PadLeft;
 
-            return ReadCmd();
+            string pad = new(' ', padleft);
+
+            Console.WriteLine($"{pad}╔{str}╗");
+            Console.WriteLine($"{pad}║{text.PadLeft(PadLeft)}{new string(' ', PadRight)}║");
+            Console.WriteLine($"{pad}╚{str}╝");
         }
 
         static int ReadCmd(int start = 1, int end = 4)
@@ -205,6 +202,24 @@ namespace ConsoleApp
             }
         }
 
+        public static int MainMenu()
+        {
+            Console.Clear();
+            Console.Write("\n\n\n");
+            Console.WriteLine("                  ██████  █████  ███████ ██   ██ ██ ███████ ██████      ███    ███ ███████ ███    ██ ██    ██");
+            Console.WriteLine("                 ██      ██   ██ ██      ██   ██ ██ ██      ██   ██     ████  ████ ██      ████   ██ ██    ██");
+            Console.WriteLine("                 ██      ███████ ███████ ███████ ██ █████   ██████      ██ ████ ██ █████   ██ ██  ██ ██    ██");
+            Console.WriteLine("                 ██      ██   ██      ██ ██   ██ ██ ██      ██   ██     ██  ██  ██ ██      ██  ██ ██ ██    ██");
+            Console.WriteLine("                  ██████ ██   ██ ███████ ██   ██ ██ ███████ ██   ██     ██      ██ ███████ ██   ████  ██████\n\n\n");
+
+            PrintButton("1. Login", 40, 43);
+            PrintButton("2. Create Bill", 40, 43);
+            PrintButton("3. View History Transaction", 40, 43);
+            PrintButton("4. Report Shift", 40, 43);
+
+            return ReadCmd();
+        }
+
         public static ConsoleKey? Alert(string alert, int left = 4, int top = 4, ConsoleColor color = ConsoleColor.Green, bool interrupt = true, bool cls = false)
         {
             if (cls) Console.Clear();
@@ -223,32 +238,24 @@ namespace ConsoleApp
             return null;
         }
 
-        public static void PrintButton(string text, int B_length, int padleft = 0)
-        {
-            string str = new('═', B_length - 2);
-            if (text.Length > B_length - 2)
-                B_length = text.Length + 4;
-
-            int PadLeft = (B_length + text.Length) / 2 - 1;
-            int PadRight = B_length - 2 - PadLeft;
-
-            string pad = new(' ', padleft);
-
-            Console.WriteLine($"{pad}╔{str}╗");
-            Console.WriteLine($"{pad}║{text.PadLeft(PadLeft)}{new string(' ', PadRight)}║");
-            Console.WriteLine($"{pad}╚{str}╝");
-        }
-
         public static int ChooseShiftScreen()
         {
-            Alert("Choose your shift:\n", interrupt: false, cls: true);
+            Alert("You can login 15 minutes before your shift start\n\n\n    Choose your shift:\n", top: 1, interrupt: false, cls: true);
 
-            PrintButton("1. Shift 1", 25, 10);
-            PrintButton("2. Shift 2", 25, 10);
+            PrintButton($"1. Shift 1 ({startTime1:hh\\:mm} - {startTime2:hh\\:mm})", 40, 10);
+            PrintButton($"2. Shift 2 ({startTime2:hh\\:mm} - {endTime:hh\\:mm})", 40, 10);
 
-            Console.WriteLine("\n\n\n    --- Enter 'esc' button to go back ---");
+            Console.WriteLine("\n\n    --- Enter 'esc' button to go back ---");
 
             return ReadCmd(end: 2);
+        }
+
+        public static bool IsLoginTime(int shift) {
+            now = DateTime.Now.TimeOfDay;
+            if (shift == 1)
+                return now.Add(new(0, 15, 0)) >= startTime1 && now < startTime2;
+            else
+                return now.Add(new(0, 15, 0)) >= startTime2 && now < endTime;
         }
 
         public static string? GetStrCharByChar()
@@ -281,10 +288,10 @@ namespace ConsoleApp
             }
         }
 
-        public static string[]? OpenLoginScreen(int shift = 1)
+        public static string[]? OpenLoginScreen(int shift)
         {
             Console.CursorVisible = true;
-            Alert($"You are logging to shift {shift}\n    You can only login from {((shift == 1) ? "7:45 AM to 2:59 PM" : "2:45 PM to 9:59 PM")}", 4, 1, interrupt: false, cls: true);
+            Alert($"You are logging to shift {shift}", top: 1, interrupt: false, cls: true);
             Console.ResetColor();
 
             Console.Write("\n\n\n");
@@ -313,6 +320,17 @@ namespace ConsoleApp
                 return null;
 
             return new string[2] {username, password};
+        }
+
+        public static int GetCurrentShiftValue() {
+            now = DateTime.Now.TimeOfDay;
+            
+            if (now >= startTime1 && now < startTime2)
+                return 1;
+            else if (now >= startTime2 && now < endTime)
+                return 2;
+            
+            return 0;
         }
 
         public static Cashier? ChooseCashierScreen(List<Cashier> cashiers) {
@@ -358,25 +376,6 @@ namespace ConsoleApp
             Console.WriteLine("                                    ██   ██ ██ ██      ██");
             Console.WriteLine("                                    ██████  ██ ███████ ███████\n\n\n");
             Console.WriteLine($"Cashier: {cashier.Name}\n");
-        }
-
-        public static bool IsLoginTime(int shift) {
-            now = DateTime.Now.TimeOfDay;
-            if (shift == 1)
-                return now.Add(new(0, 15, 0)) >= startTime1 && now < startTime2;
-            else
-                return now.Add(new(0, 15, 0)) >= startTime2 && now < endTime;
-        }
-    
-        public static int GetCurrentShiftValue() {
-            now = DateTime.Now.TimeOfDay;
-            
-            if (now >= startTime1 && now < startTime2)
-                return 1;
-            else if (now >= startTime2 && now < endTime)
-                return 2;
-            
-            return 0;
         }
     }
 }
