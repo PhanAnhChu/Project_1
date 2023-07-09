@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using BLL;
 using Persistence;
-using System.Timers;
 using System.Linq;
 
 namespace ConsoleApp
@@ -19,36 +18,6 @@ namespace ConsoleApp
 
         public static void Main()
         {
-            ShiftV shift = new() { Value = 0 };
-            Timer timer;
-            // = new(3000) { AutoReset = false };
-            // timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 1);
-            // timer.Start();
-
-            // Check the current time to prepare for the next shift
-            if (now < startTime1) {
-                timer = new(startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift);
-                timer.Start();
-            }
-            else if (now < startTime2) {
-                shift.Value = 1;
-                timer = new(startTime2 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 2);
-                timer.Start();
-            }
-            else if (now < endTime) {
-                shift.Value = 2;
-                timer = new(endTime - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 0, false);
-                timer.Start();
-            }
-            else {
-                timer = new(new TimeSpan(24, 0, 0) + startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift);
-                timer.Start();
-            }
-
             bool running = true; // The Program will exit when this is set to 'false'
             int screen = 0; // Define the current screen
             CashierBLL cbll = new(); // Do things with Cashier
@@ -62,7 +31,6 @@ namespace ConsoleApp
                 {
                     case 0: // Main Menu
                         screen = MainMenu(); // Only return 1 -> 4
-                        Alert($"Current shift value: {shift.Value}", 4, 25);
                         break;
 
                     case 1: // Choose Shift, then Login
@@ -80,7 +48,6 @@ namespace ConsoleApp
                                 Cashier? cashier = cbll.GetCashierByLogin(strs[0], strs[1]);
                                 if (cashier != null)
                                 {
-                                    now = DateTime.Now.TimeOfDay;
                                     if (IsLoginTime(cmd)) {
                                         if (cmd == 1)
                                             list1.Add(cashier);
@@ -104,7 +71,9 @@ namespace ConsoleApp
                         break;
 
                     case 2: // Create Bill
-                        if (shift.Value == 1) {
+                        int shiftValue = GetCurrentShiftValue();
+
+                        if (shiftValue == 1) {
                             if (list1.Count > 0) { // Check if anyone is in the system first
                                 Cashier? cashier = ChooseCashierScreen(list1); // Only null if User enter 'Esc' => Back to Main Menu
 
@@ -117,7 +86,7 @@ namespace ConsoleApp
                             else
                                 Alert("No one has logged in the shift yet, please login.", 25, 14, ConsoleColor.Yellow, cls: true);
                         }
-                        else if (shift.Value == 2) {
+                        else if (shiftValue == 2) {
                             if (list1.Count > 0) // Anyone in list1 must be logged out first
                                 Alert("Cashier from previous shift must log out first.", 25, 14, ConsoleColor.Yellow, cls: true);
                             else if (list2.Count == 0)
@@ -143,10 +112,12 @@ namespace ConsoleApp
                         break;
 
                     case 4:
+                        shiftValue = GetCurrentShiftValue();
                         Cashier? reporter = null;
-                        if (list1.Count > 0 && shift.Value != 1)
+
+                        if (list1.Count > 0 && shiftValue != 1)
                             reporter = ChooseCashierScreen(list1);
-                        else if (list2.Count > 0 && shift.Value != 2)
+                        else if (list2.Count > 0 && shiftValue != 2)
                             reporter = ChooseCashierScreen(list2);
 
                         if (reporter != null) {
@@ -193,49 +164,7 @@ namespace ConsoleApp
                         screen = 0;
                         break;
                 }
-
-                timer.Stop();
-                timer.Dispose();
             }
-        }
-
-        static void ChangeShiftValue(Timer timer, ShiftV shift, int value = 1, bool record = true) {
-            timer.Stop();
-            timer.Dispose();
-
-            shift.Value = value;
-
-            if (record)
-                timeLog = DateTime.Now;
-
-            now = DateTime.Now.TimeOfDay;
-
-            if (value == 1) {
-                timer = new(startTime2 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 2);
-                timer.Start();
-            }
-            else if (value == 2) {
-                timer = new(endTime - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 0);
-                timer.Start();
-            }
-            else {
-                timer = new(new TimeSpan(24, 0, 0) + startTime1 - now) { AutoReset = false };
-                timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift);
-                timer.Start();
-            }
-
-            // timer = new(3000) { AutoReset = false };
-
-            // if (value == 1)
-            //     timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 2);
-            // else if (value == 2)
-            //     timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift, 0);
-            // else
-            //     timer.Elapsed += (sender, e) => ChangeShiftValue(timer, shift);
-
-            // timer.Start();
         }
 
         public static int MainMenu()
@@ -431,6 +360,23 @@ namespace ConsoleApp
             Console.WriteLine($"Cashier: {cashier.Name}\n");
         }
 
-        public static bool IsLoginTime(int shift) => (shift == 1) ? (now.Add(new(0, 15, 0)) >= startTime1 && now < startTime2) : (now.Add(new(0, 15, 0)) >= startTime2 && now < endTime);
+        public static bool IsLoginTime(int shift) {
+            now = DateTime.Now.TimeOfDay;
+            if (shift == 1)
+                return now.Add(new(0, 15, 0)) >= startTime1 && now < startTime2;
+            else
+                return now.Add(new(0, 15, 0)) >= startTime2 && now < endTime;
+        }
+    
+        public static int GetCurrentShiftValue() {
+            now = DateTime.Now.TimeOfDay;
+            
+            if (now >= startTime1 && now < startTime2)
+                return 1;
+            else if (now >= startTime2 && now < endTime)
+                return 2;
+            
+            return 0;
+        }
     }
 }
