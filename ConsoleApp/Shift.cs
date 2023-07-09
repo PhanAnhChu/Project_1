@@ -1,3 +1,7 @@
-class ShiftValue {
-    public int Value { get; set; }
+namespace ConsoleApp
+{
+    public class ShiftV
+    {
+        public int Value { get; set; }
+    }
 }

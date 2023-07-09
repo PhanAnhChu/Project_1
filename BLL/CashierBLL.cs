@@ -7,9 +7,6 @@ namespace BLL
     {
         readonly CashierDAL cdal = new();
 
-        public Cashier? GetCashierByLogin(string username, string password)
-        {
-            return cdal.GetCashierByLogin(username, password);
-        }
+        public Cashier? GetCashierByLogin(string username, string password) => cdal.GetCashierByLogin(username, password);
     }
 }

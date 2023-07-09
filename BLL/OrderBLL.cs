@@ -8,14 +8,8 @@ namespace BLL
     {
         readonly OrderDAL odal = new();
 
-        public Order? GetOrderById(int id)
-        {
-            return odal.GetOrderById(id);
-        }
+        public Order? GetOrderById(int id) => odal.GetOrderById(id);
 
-        public List<Order> GetOrdersFromBill(Bill bill)
-        {
-            return odal.GetOrdersFromBill(bill);
-        }
+        public List<Order> GetOrdersFromBill(Bill bill) => odal.GetOrdersFromBill(bill);
     }
 }
