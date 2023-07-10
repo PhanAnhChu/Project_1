@@ -128,8 +128,15 @@ namespace DAL
                     cmd.ExecuteNonQuery();
 
                     if (odal.AddOrders(orders, id)) {
-                        tran.Commit();
-                        return true;
+                        bool success = true;
+    
+                        foreach (Order o in orders)
+                            if (!odal.DecreaseQuantity(o)) {
+                                success = false;
+                                break;
+                            }
+
+                        if (success) return true;
                     }
 
                     throw new Exception("Add orders failed!");

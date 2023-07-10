@@ -110,5 +110,31 @@ namespace DAL
                 Con.Close();
             }
         }
+
+        public bool DecreaseQuantity(Order order) {
+            try
+            {
+                Con.Open();
+
+                query = "UPDATE Goods SET Quantity = Quantity - @quan WHERE Id = @id";
+
+                MySqlCommand cmd = new(query, Con);
+                cmd.Parameters.AddWithValue("@quan", order.Quantity);
+                cmd.Parameters.AddWithValue("@id", order.Good_id);
+
+                cmd.Prepare();
+                cmd.ExecuteNonQuery();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return false;
+            }
+            finally {
+                Con.Close();
+            }
+        }
     }
 }

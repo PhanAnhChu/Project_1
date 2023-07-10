@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BLL;
 using Persistence;
 using System.Linq;
+using Org.BouncyCastle.Asn1.Misc;
 
 namespace ConsoleApp
 {
@@ -20,11 +21,13 @@ namespace ConsoleApp
         {
             bool running = true; // The Program will exit when this is set to 'false'
             int screen = 0; // Define the current screen
+            List<List<Cashier>> loginList = new() { new(), new() }; // Store cashiers who login to shift 1 & 2
+            List<Order> orders = new();
+
+            // Interact with database
             CashierBLL cbll = new(); // Do things with Cashier
             BillBLL bbll = new(); // Do things with Bill
             ShiftBLL sbll = new(); // Do things with Shift
-            List<List<Cashier>> loginList = new() { new(), new() }; // Store cashiers who login to shift 1 & 2
-            List<Order> orders = new();
 
             while (running)
             {
@@ -86,11 +89,18 @@ namespace ConsoleApp
                             else {
                                 Cashier? cashier = ChooseCashierScreen(list);
 
+
                                 while (cashier != null) {
                                     bool confirm = false;
                                     cmd = CreateBillScreen(cashier);
+                                    if (orders.Count > 0)
+                                        ChooseOrderScreen(orders);
+
                                     switch (cmd) {
                                         case 1:
+                                            Order? order = CreateOrder(orders.Count + 1);
+                                            if (order != null)
+                                                orders.Add(order);
 
                                             break;
                                         
@@ -121,7 +131,7 @@ namespace ConsoleApp
                                             orders.Clear();
                                             Alert("Add Bill successfully!", 4, 18 + orders.Count);
                                         }
-                                        else Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
+                                        else Alert("Some error occurs. Please try again or contact the database maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
 
                                         break;
                                     }
@@ -380,12 +390,13 @@ namespace ConsoleApp
                 Console.Write("\n\n\n    --- Enter 'esc' button to go back ---");
 
                 Console.SetCursorPosition(27, 4);
-                string? cmd = GetStrCharByChar();
 
-                if (cmd == null)
+                int? id = GetIntCharByChar();
+
+                if (id == null)
                     return null;
                 else {
-                    if (int.TryParse(cmd, out int id)) {
+                    if (id > int.MinValue) {
                         Cashier? cashier = cashiers.FirstOrDefault(c => c.Id == id);
                         if (cashier != null)
                             return cashier;
@@ -415,5 +426,87 @@ namespace ConsoleApp
             return ReadCmd();
         }
 
+        public static int? GetIntCharByChar() { // Return null if user enter 'Esc', and return int.MinValue if int.TryParse() false
+            string? str = GetStrCharByChar();
+
+            if (str == null) return null;
+
+            if (int.TryParse(str, out int id))
+                return id;
+            
+            return int.MinValue;
+        }
+
+        public static Order? CreateOrder(int order_id) { // Return null if user enter 'Esc'
+            GoodBLL gbll = new();
+
+            while (true) {
+                Console.Write("\n\n    Enter Product's Id: ");
+                int? id = GetIntCharByChar();
+
+                if (id != null) {
+                    if (id > int.MinValue) {
+                        Good? good = gbll.GetGoodById((int)id);
+                        if (good != null) {
+                            while (true) {
+                                Console.Write("\nQuantity: ");
+                                int? quantity = GetIntCharByChar();
+                                if (quantity != null) {
+                                    if (quantity > 0) {
+                                        if (quantity <= gbll.GetCurrentQuantity((int)id)) // Return Int.MinValue if error happen, so this statement can only true if no error happen.
+                                            return new() { Id = order_id, Good_id = (int)id, Quantity = (int)quantity };
+                                        else {
+                                            Alert("Not enough goods left", 4, 12, ConsoleColor.Red);
+                                            continue;
+                                        }
+                                    }
+                                    else {
+                                        Alert("Quantity must be greater than 0", 4, 12, ConsoleColor.Red);
+                                        continue;
+                                    }
+                                }
+                                else break;
+                            }
+                        }
+                        else {
+                            Alert("Product not found, please try again.", 4, 10, ConsoleColor.Red);
+                            continue;
+                        }
+                    }
+                    else Alert("Invalid Id, Please try again.", 4, 10, ConsoleColor.Red);
+                }
+                else
+                    return null;
+            }
+        }
+    
+        public static int ChooseOrderScreen(List<Order> orders) { // Return int.MinValue if error occur
+            GoodBLL gbll = new();
+
+            string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+";
+
+            // Print out the cashiers table
+            Console.Write("\n\n");
+            Console.WriteLine(str);
+            Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}|");
+            Console.WriteLine(str);
+
+            // An order are only created if 'Good_Id' is valid. So in case of error, it's not the code that causes it
+            foreach (Order order in orders) {
+                Good? good = gbll.GetGoodById(order.Good_id);
+                if (good != null)
+                    Console.WriteLine($"          | {order.Id, -3}| {good.Name, -12}| {order.Quantity, -10}|");
+                
+                else {
+                    Alert("Some error occurs. Please try again or contact the database maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
+                    return int.MinValue;
+                }
+            }
+
+            Console.WriteLine(str);
+            Console.Write("\n\n\n    --- Enter 'esc' button to go back ---");
+
+            return ReadCmd(end: orders.Count + 1);
+        }
     }
 }
