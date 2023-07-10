@@ -21,9 +21,10 @@ namespace ConsoleApp
             bool running = true; // The Program will exit when this is set to 'false'
             int screen = 0; // Define the current screen
             CashierBLL cbll = new(); // Do things with Cashier
+            BillBLL bbll = new(); // Do things with Bill
             ShiftBLL sbll = new(); // Do things with Shift
-            List<Cashier> list1 = new(); // Store cashiers who login to shift 1
-            List<Cashier> list2 = new(); // Same, but shift 2
+            List<List<Cashier>> loginList = new() { new(), new() }; // Store cashiers who login to shift 1 & 2
+            List<Order> orders = new();
 
             while (running)
             {
@@ -49,10 +50,7 @@ namespace ConsoleApp
                                     Cashier? cashier = cbll.GetCashierByLogin(strs[0], strs[1]);
                                     if (cashier != null)
                                     {
-                                        if (cmd == 1)
-                                            list1.Add(cashier);
-                                        else
-                                            list2.Add(cashier);
+                                        loginList[--cmd].Add(cashier);
 
                                         screen = 0;
                                         Alert($"Login successfully. Hello {cashier.Name}.", 4, 27);
@@ -72,36 +70,64 @@ namespace ConsoleApp
                     case 2: // Create Bill
                         int shiftValue = GetCurrentShiftValue();
 
-                        if (shiftValue == 1) {
-                            if (list1.Count > 0) { // Check if anyone is in the system first
-                                Cashier? cashier = ChooseCashierScreen(list1); // Only null if User enter 'Esc' => Back to Main Menu
-
-                                if (cashier != null) {
-                                    CreateBillScreen(cashier);
-                                    Console.ReadKey();
-                                    break;
-                                }
-                            }
-                            else
-                                Alert("No one has logged in the shift yet, please login.", 25, 14, ConsoleColor.Yellow, cls: true);
-                        }
-                        else if (shiftValue == 2) {
-                            if (list1.Count > 0) // Anyone in list1 must be logged out first
-                                Alert("Cashier from previous shift must log out first.", 25, 14, ConsoleColor.Yellow, cls: true);
-                            else if (list2.Count == 0)
-                                Alert("No one has logged in the shift yet, please login.", 25, 14, ConsoleColor.Yellow, cls: true);
-                            else {
-                                Cashier? cashier = ChooseCashierScreen(list2);
-
-                                if (cashier != null) {
-                                    CreateBillScreen(cashier);
-                                    Console.ReadKey();
-                                    break;
-                                }
-                            }
-                        }
-                        else
+                        if (shiftValue == 0) {
                             Alert("The shift is not started yet.", 30, 14, ConsoleColor.Yellow, cls: true);
+                            screen = 0;
+                            break;
+                        }
+
+                        List<Cashier> list = loginList[shiftValue - 1];
+
+                        if (list.Count == 0)
+                            Alert("No one has logged in the shift yet, please login.", 25, 14, ConsoleColor.Yellow, cls: true);
+                        else {
+                            if (shiftValue == 2 && loginList[0].Count > 0)
+                                Alert("Cashiers from previous shift must log out first.", 25, 14, ConsoleColor.Yellow, cls: true);
+                            else {
+                                Cashier? cashier = ChooseCashierScreen(list);
+
+                                while (cashier != null) {
+                                    bool confirm = false;
+                                    cmd = CreateBillScreen(cashier);
+                                    switch (cmd) {
+                                        case 1:
+
+                                            break;
+                                        
+                                        case 2:
+                                            break;
+                            
+                                        case 3:
+                                            break;
+
+                                        case 4:
+                                            while (true) {
+                                                ConsoleKey? key = Alert("Are you sure to create this bill ? (Y/N)", 4, 15 + orders.Count, ConsoleColor.Yellow);
+                                                if (key == ConsoleKey.Y) {
+                                                    confirm = true;
+                                                    break;
+                                                }
+                                                else if (key == ConsoleKey.N || key == null) break;
+                                                else {
+                                                    Alert("Please enter 'Y' or 'N' !", 4, 18 + orders.Count, ConsoleColor.Red);
+                                                    continue;
+                                                }
+                                            }
+                                            break;
+                                    }
+
+                                    if (confirm) {
+                                        if (bbll.AddBill(new() { Cashier_id = cashier.Id, Created_date = DateTime.Now }, orders)) {
+                                            orders.Clear();
+                                            Alert("Add Bill successfully!", 4, 18 + orders.Count);
+                                        }
+                                        else Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
+
+                                        break;
+                                    }
+                                }
+                            }
+                        }
 
                         screen = 0;
                         break;
@@ -111,62 +137,63 @@ namespace ConsoleApp
                         break;
 
                     case 4:
+                        bool IsReportTime = false;
                         shiftValue = GetCurrentShiftValue();
+                        list = new();
                         Cashier? reporter = null;
 
-                        if (list1.Count > 0 && shiftValue != 1)
-                            reporter = ChooseCashierScreen(list1);
-                        else if (list2.Count > 0 && shiftValue != 2)
-                            reporter = ChooseCashierScreen(list2);
+                        for (int i = 0; i < loginList.Count; ++i)
+                            if (loginList[i].Count > 0 && shiftValue != i + 1) {
+                                list = loginList[i];
+                                reporter = ChooseCashierScreen(list); // Only return null if User enter 'Esc'
+                                IsReportTime = true;
+                                break;
+                            }
+                        
+                        if (!IsReportTime) {
+                            Alert("Invalid report time! Please try again later.", 28, 14, ConsoleColor.Red, cls: true);
+                            screen = 0;
+                            break;
+                        }
 
                         if (reporter != null) {
                             while (true) {
-                                float total = ShiftBLL.CheckTotalIncome(new() { StartTime = timeLog, EndTime = DateTime.Now });
-                                Alert($"Expected Income: ${total}", interrupt: false, cls: true);
-                                Console.WriteLine("    Actual Income: ");
+                                float total = bbll.CheckTotalIncome(bbll.GetBillsFromInterval(timeLog, DateTime.Now));
+                                Alert($"Expected Income from this Shift: ${total}", interrupt: false, cls: true);
+                                Console.Write("    Enter the Actual Income of this Shift: ");
 
                                 if (float.TryParse(Console.ReadLine(), out float actual))
                                 {
-                                    Alert($"Reporter: {reporter.Name} - Id: {reporter.Id}\nAre you sure to report this ? (Y/N)", 4, 8, ConsoleColor.Yellow);
-                                    string? choice = GetStrCharByChar();
+                                    ConsoleKey? key = Alert($"Reporter: {reporter.Name} - Id: {reporter.Id}\nAre you sure to report this ? (Y/N)", 4, 8, ConsoleColor.Yellow);
 
-                                    if (choice != null) {
-                                        if (choice == "Y") {
-                                            if (sbll.AddShift(timeLog, DateTime.Now, reporter.Id, total, actual)) {
-                                                if (list1.Count > 0)
-                                                    list1.Clear();
-                                                else if (list2.Count > 0)
-                                                    list2.Clear();
+                                    if (key == ConsoleKey.Y) {
+                                        if (sbll.AddShift(timeLog, DateTime.Now, reporter.Id, total, actual)) {
+                                            list.Clear();
 
-                                                timeLog = DateTime.Now;
-                                                Alert("Report successfully!", 4, 13);
-                                                break;
-                                            }
-                                            else
-                                                Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
+                                            timeLog = DateTime.Now;
+                                            Alert("Report successfully!", 4, 13);
+                                            break;
                                         }
-                                        else if (choice == "N") break;
-                                        else {
-                                            Alert("Please enter 'Y' or 'N' !", 4, 13, ConsoleColor.Red);
-                                            continue;
-                                        }
+                                        else
+                                            Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
                                     }
-                                    else break;
+                                    else if (key == ConsoleKey.N || key == null) break;
+                                    else {
+                                        Alert("Please enter 'Y' or 'N' !", 4, 13, ConsoleColor.Red);
+                                        continue;
+                                    }
                                 }
                                 else Alert("Invalid input format! Please try again.", 4, 13, ConsoleColor.Red);
                             }
                         }
-                        else {
-                            Alert("Invalid report time! Please try again later.", 28, 14, ConsoleColor.Red, cls: true);
-                        }
-    
+
                         screen = 0;
                         break;
                 }
             }
         }
 
-        public static void PrintButton(string text, int B_length, int padleft = 0)
+        public static void PrintButton(string text, int B_length, int left, int top)
         {
             string str = new('═', B_length - 2);
             if (text.Length > B_length - 2)
@@ -175,11 +202,12 @@ namespace ConsoleApp
             int PadLeft = (B_length + text.Length) / 2 - 1;
             int PadRight = B_length - 2 - PadLeft;
 
-            string pad = new(' ', padleft);
-
-            Console.WriteLine($"{pad}╔{str}╗");
-            Console.WriteLine($"{pad}║{text.PadLeft(PadLeft)}{new string(' ', PadRight)}║");
-            Console.WriteLine($"{pad}╚{str}╝");
+            Console.SetCursorPosition(left, top);
+            Console.WriteLine($"╔{str}╗");
+            Console.CursorLeft += left;
+            Console.WriteLine($"║{text.PadLeft(PadLeft)}{new string(' ', PadRight)}║");
+            Console.CursorLeft += left;
+            Console.WriteLine($"╚{str}╝");
         }
 
         static int ReadCmd(int start = 1, int end = 4)
@@ -212,10 +240,10 @@ namespace ConsoleApp
             Console.WriteLine("                 ██      ██   ██      ██ ██   ██ ██ ██      ██   ██     ██  ██  ██ ██      ██  ██ ██ ██    ██");
             Console.WriteLine("                  ██████ ██   ██ ███████ ██   ██ ██ ███████ ██   ██     ██      ██ ███████ ██   ████  ██████\n\n\n");
 
-            PrintButton("1. Login", 40, 43);
-            PrintButton("2. Create Bill", 40, 43);
-            PrintButton("3. View History Transaction", 40, 43);
-            PrintButton("4. Report Shift", 40, 43);
+            PrintButton("1. Login", 40, 40, 11);
+            PrintButton("2. Create Bill", 40, 40, 15);
+            PrintButton("3. View History Transaction", 40, 40, 19);
+            PrintButton("4. Report Shift", 40, 40, 23);
 
             return ReadCmd();
         }
@@ -240,10 +268,10 @@ namespace ConsoleApp
 
         public static int ChooseShiftScreen()
         {
-            Alert("You can login 15 minutes before your shift start\n\n\n    Choose your shift:\n", top: 1, interrupt: false, cls: true);
+            Alert("You can login 15 minutes before your shift start\n\n\n    Choose your shift:", top: 1, interrupt: false, cls: true);
 
-            PrintButton($"1. Shift 1 ({startTime1:hh\\:mm} - {startTime2:hh\\:mm})", 40, 10);
-            PrintButton($"2. Shift 2 ({startTime2:hh\\:mm} - {endTime:hh\\:mm})", 40, 10);
+            PrintButton($"1. Shift 1 ({startTime1:hh\\:mm} - {startTime2:hh\\:mm})", 40, 10, 6);
+            PrintButton($"2. Shift 2 ({startTime2:hh\\:mm} - {endTime:hh\\:mm})", 40, 10, 10);
 
             Console.WriteLine("\n\n    --- Enter 'esc' button to go back ---");
 
@@ -309,12 +337,12 @@ namespace ConsoleApp
             Console.Write("                                --- Enter 'esc' button to go back ---");
 
 
-            Console.SetCursorPosition(36, 15);
+            Console.SetCursorPosition(36, 14);
             string? username = GetStrCharByChar();
             if (username == null)
                 return null;
 
-            Console.SetCursorPosition(36, 19);
+            Console.SetCursorPosition(36, 18);
             string? password = GetStrCharByChar();
             if (password == null)
                 return null;
@@ -367,15 +395,25 @@ namespace ConsoleApp
             }
         }
 
-        public static void CreateBillScreen(Cashier cashier) {
+        public static int CreateBillScreen(Cashier cashier) {
             Console.Clear();
+            PrintButton("1. Add Product", 24, 14, 1);
+            PrintButton("2. Modify Product", 24, 69, 1);
+            PrintButton("3. Remove Product", 24, 14, 5);
+            PrintButton("4. Confirm Bill", 24, 69, 5);
+
             Console.Write("\n\n\n");
-            Console.WriteLine("                                    ██████  ██ ██      ██");
-            Console.WriteLine("                                    ██   ██ ██ ██      ██");
-            Console.WriteLine("                                    ██████  ██ ██      ██");
-            Console.WriteLine("                                    ██   ██ ██ ██      ██");
-            Console.WriteLine("                                    ██████  ██ ███████ ███████\n\n\n");
+            Console.WriteLine("               ██████ ██████  ███████  █████  ████████ ███████     ██████  ██ ██      ██");
+            Console.WriteLine("              ██      ██   ██ ██      ██   ██    ██    ██          ██   ██ ██ ██      ██");
+            Console.WriteLine("              ██      ██████  █████   ███████    ██    █████       ██████  ██ ██      ██");
+            Console.WriteLine("              ██      ██   ██ ██      ██   ██    ██    ██          ██   ██ ██ ██      ██");
+            Console.WriteLine("               ██████ ██   ██ ███████ ██   ██    ██    ███████     ██████  ██ ███████ ███████\n\n\n");
+
+
             Console.WriteLine($"Cashier: {cashier.Name}\n");
+
+            return ReadCmd();
         }
+
     }
 }

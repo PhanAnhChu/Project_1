@@ -61,14 +61,14 @@ namespace DAL
             }
         }
 
-        public List<Bill> GetBillsFromShift(Shift shift) {
+        public List<Bill> GetBillsFromInterval(DateTime startTime, DateTime endTime) {
             try {
                 Con.Open();
                 query = @"SELECT * FROM Bills WHERE Bills.created_date BETWEEN @start AND @end";
 
                 MySqlCommand cmd = new(query, Con);
-                cmd.Parameters.AddWithValue("@start", shift.StartTime);
-                cmd.Parameters.AddWithValue("@end", shift.EndTime);
+                cmd.Parameters.AddWithValue("@start", startTime);
+                cmd.Parameters.AddWithValue("@end", endTime);
 
                 cmd.Prepare();
 
@@ -83,6 +83,8 @@ namespace DAL
                 Con.Close();
             }
         }
+
+        public List<Bill> GetBillsFromShift(Shift shift) => GetBillsFromInterval(shift.StartTime, shift.EndTime);
 
         public static List<Bill> GetBills(MySqlDataReader reader)
         {
@@ -177,6 +179,14 @@ namespace DAL
             finally {
                 Con.Close();
             }
+        }
+
+        public float CheckTotalIncome(List<Bill> bills) {
+            float total = 0;
+            foreach (Bill bill in bills)
+                total += CheckTotalPrice(bill.Id);
+            
+            return total;
         }
     }
 }
