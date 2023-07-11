@@ -82,59 +82,5 @@ namespace DAL
                 Con.Close();
             }
         }
-
-        public bool AddOrders(List<Order> orders, int bill_id)
-        {
-            try
-            {
-                Con.Open();
-
-                query = "INSERT INTO Orders(bill_id, good_id, quantity) VALUES ";
-
-                foreach (Order order in orders)
-                    query += $"({bill_id}, {order.Good_id}, {order.Quantity}), ";
-
-                MySqlCommand cmd = new(query.Remove(query.Length - 2), Con);
-
-                cmd.Prepare();
-                cmd.ExecuteNonQuery();
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
-                return false;
-            }
-            finally {
-                Con.Close();
-            }
-        }
-
-        public bool DecreaseQuantity(Order order) {
-            try
-            {
-                Con.Open();
-
-                query = "UPDATE Goods SET Quantity = Quantity - @quan WHERE Id = @id";
-
-                MySqlCommand cmd = new(query, Con);
-                cmd.Parameters.AddWithValue("@quan", order.Quantity);
-                cmd.Parameters.AddWithValue("@id", order.Good_id);
-
-                cmd.Prepare();
-                cmd.ExecuteNonQuery();
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
-                return false;
-            }
-            finally {
-                Con.Close();
-            }
-        }
     }
 }

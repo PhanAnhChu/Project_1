@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using BLL;
 using Persistence;
-using System.Linq;
-using Org.BouncyCastle.Asn1.Misc;
 
 namespace ConsoleApp
 {
@@ -15,19 +13,20 @@ namespace ConsoleApp
         // Control the start/end time of shift 1 & 2
         static TimeSpan startTime1 = new(8, 0, 0);
         static TimeSpan startTime2 = new(15, 0, 0);
-        static TimeSpan endTime = new(22, 0, 0);
+        static TimeSpan endTime = new(23, 59, 0);
 
         public static void Main()
         {
             bool running = true; // The Program will exit when this is set to 'false'
             int screen = 0; // Define the current screen
-            List<List<Cashier>> loginList = new() { new(), new() }; // Store cashiers who login to shift 1 & 2
+            List<List<Cashier>> loginList = new() { new(), new() { new() { Id = 1, Name = "Phan Anh" } } }; // Store cashiers who login to shift 1 & 2
             List<Order> orders = new();
 
             // Interact with database
             CashierBLL cbll = new(); // Do things with Cashier
             BillBLL bbll = new(); // Do things with Bill
             ShiftBLL sbll = new(); // Do things with Shift
+            GoodBLL gbll = new();
 
             while (running)
             {
@@ -88,26 +87,103 @@ namespace ConsoleApp
                                 Alert("Cashiers from previous shift must log out first.", 25, 14, ConsoleColor.Yellow, cls: true);
                             else {
                                 Cashier? cashier = ChooseCashierScreen(list);
-
-
+                
                                 while (cashier != null) {
                                     bool confirm = false;
-                                    cmd = CreateBillScreen(cashier);
-                                    if (orders.Count > 0)
-                                        ChooseOrderScreen(orders);
+
+                                    cmd = CreateBillScreen(cashier, orders);
+                                    if (cmd == int.MinValue)
+                                        break;
 
                                     switch (cmd) {
                                         case 1:
-                                            Order? order = CreateOrder(orders.Count + 1);
+                                            Order? order = CreateOrder(orders);
                                             if (order != null)
                                                 orders.Add(order);
-
+        
                                             break;
                                         
                                         case 2:
+                                            Alert("- MODIFY PRODUCT -", 40, 15, interrupt: false);
+                                            Alert("Enter Product Id:", 8, 17, ConsoleColor.Yellow, false);
+                                            Alert("<- Input must be between 0 and 2,147,483,647.", 44, 17, ConsoleColor.Green, false);
+                                            int index = int.MinValue;
+
+                                            while (true) {
+                                                ClearRow(26, 17, 10);
+                                                int? id = GetIntCharByChar();
+                                                int? quantity;
+                                                if (id != null) {
+                                                    index = orders.FindIndex(o => o.Id == id);
+                                                    if (index != -1) {
+                                                        int nums_goods_left = gbll.GetCurrentQuantity(orders[index].Good_id);
+                                                        if (nums_goods_left == int.MinValue) {
+                                                            Alert("Some error occurs. Please try again or contact the database maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
+                                                            break;
+                                                        }
+
+                                                        int position = index + 22;
+                                                        Alert("<- Modify quantity to 0 will remove the product from this bill", 45, position, interrupt: false);
+                                                        while (true) {
+                                                            Alert($"<- In storage: {nums_goods_left}{new string(' ', 45)}", 45, position, interrupt: false);
+                                                            ClearRow(31, position, 10);
+                                                            quantity = GetIntCharByChar();
+                                                            if (quantity != null) {
+                                                                if (quantity > nums_goods_left) {
+                                                                    ClearRow(85, position, 23);
+                                                                    Alert("Not enough goods left, please try again.", 45, position, ConsoleColor.Red, interrupt: false);
+                                                                }
+                                                                else if (quantity < -1) {
+                                                                    if (quantity == int.MinValue) {
+                                                                        ClearRow(78, position, 30);
+                                                                        Alert("Invalid format, please try again.", 45, position, ConsoleColor.Red, interrupt: false);
+                                                                    }
+                                                                    else {
+                                                                        ClearRow(77, position, 31);
+                                                                        Alert("Quantity must be greater than 0.", 45, position, ConsoleColor.Red, interrupt: false);
+                                                                    }
+                                                                }
+                                                                else break;
+                                                            }
+                                                            else 
+                                                                break;
+                                                        }
+
+                                                        if (quantity == 0)
+                                                            orders.RemoveAt(index);
+                                                        else if (quantity != null) {
+                                                            orders[index].Quantity = (int)quantity;
+                                                            break;
+                                                        }
+                                                    }
+                                                    else Alert("Invalid Id.                                     ", 44, 17, ConsoleColor.Red, false);
+                                                }
+                                                else break;
+                                            }
+
                                             break;
                             
                                         case 3:
+                                            Alert("- REMOVE PRODUCT -", 40, 15, interrupt: false);
+                                            Alert("Enter Product Id:", 8, 17, ConsoleColor.Yellow, false);
+                                            Alert("<- Input must be between 0 and 2,147,483,647.", 44, 17, ConsoleColor.Green, false);
+
+                                            while (true) {
+                                                ClearRow(26, 17, 10);
+                                                int? id = GetIntCharByChar();
+
+                                                if (id != null) {
+                                                    order = orders.Find(o => o.Id == id);
+                                                    if (order != null) {
+                                                        orders.Remove(order);
+                                                        break;
+                                                    }
+                                                    else
+                                                        Alert("Product not found.                           ", 44, 17, ConsoleColor.Red);
+                                                }
+                                                else break;
+                                            }
+
                                             break;
 
                                         case 4:
@@ -251,9 +327,9 @@ namespace ConsoleApp
             Console.WriteLine("                  ██████ ██   ██ ███████ ██   ██ ██ ███████ ██   ██     ██      ██ ███████ ██   ████  ██████\n\n\n");
 
             PrintButton("1. Login", 40, 40, 11);
-            PrintButton("2. Create Bill", 40, 40, 15);
-            PrintButton("3. View History Transaction", 40, 40, 19);
-            PrintButton("4. Report Shift", 40, 40, 23);
+            PrintButton("2. Create Bill", 40, 40, 14);
+            PrintButton("3. View History Transaction", 40, 40, 17);
+            PrintButton("4. Report Shift", 40, 40, 20);
 
             return ReadCmd();
         }
@@ -278,7 +354,7 @@ namespace ConsoleApp
 
         public static int ChooseShiftScreen()
         {
-            Alert("You can login 15 minutes before your shift start\n\n\n    Choose your shift:", top: 1, interrupt: false, cls: true);
+            Alert("You can login 15 minutes before your shift start\n\n\n    - CHOOSE YOUR SHIFT -", top: 1, interrupt: false, cls: true);
 
             PrintButton($"1. Shift 1 ({startTime1:hh\\:mm} - {startTime2:hh\\:mm})", 40, 10, 6);
             PrintButton($"2. Shift 2 ({startTime2:hh\\:mm} - {endTime:hh\\:mm})", 40, 10, 10);
@@ -296,7 +372,7 @@ namespace ConsoleApp
                 return now.Add(new(0, 15, 0)) >= startTime2 && now < endTime;
         }
 
-        public static string? GetStrCharByChar()
+        public static string? GetStrCharByChar(int max_length = 64)
         {
             Console.CursorVisible = true;
             Stack<char> chars = new();
@@ -309,8 +385,7 @@ namespace ConsoleApp
                     if (chars.Count > 0)
                     {
                         chars.Pop();
-                        Console.Write(" ");
-                        --Console.CursorLeft;
+                        ClearRow(Console.CursorLeft, Console.CursorTop);
                     }
                     else
                         ++Console.CursorLeft;
@@ -322,7 +397,10 @@ namespace ConsoleApp
                 }
                 else if (key.Key == ConsoleKey.Escape) return null;
 
-                else chars.Push(key.KeyChar);
+                else if (chars.Count < max_length)
+                    chars.Push(key.KeyChar);
+
+                else ClearRow(--Console.CursorLeft, Console.CursorTop);
             }
         }
 
@@ -332,12 +410,12 @@ namespace ConsoleApp
             Alert($"You are logging to shift {shift}", top: 1, interrupt: false, cls: true);
             Console.ResetColor();
 
-            Console.Write("\n\n\n");
+            Console.Write("\n\n");
             Console.WriteLine("                                ██       ██████   ██████  ██ ███    ██");
             Console.WriteLine("                                ██      ██    ██ ██       ██ ████   ██");
             Console.WriteLine("                                ██      ██    ██ ██   ███ ██ ██ ██  ██");
             Console.WriteLine("                                ██      ██    ██ ██    ██ ██ ██  ██ ██");
-            Console.WriteLine("                                ███████  ██████   ██████  ██ ██   ████\n\n\n");
+            Console.WriteLine("                                ███████  ██████   ██████  ██ ██   ████\n\n");
             Console.WriteLine("                        ╔═══════════════════════════════════════════════════╗");
             Console.WriteLine("                        ║ Username:                                         ║");
             Console.WriteLine("                        ╚═══════════════════════════════════════════════════╝\n");
@@ -347,12 +425,12 @@ namespace ConsoleApp
             Console.Write("                                --- Enter 'esc' button to go back ---");
 
 
-            Console.SetCursorPosition(36, 14);
+            Console.SetCursorPosition(36, 12);
             string? username = GetStrCharByChar();
             if (username == null)
                 return null;
 
-            Console.SetCursorPosition(36, 18);
+            Console.SetCursorPosition(36, 16);
             string? password = GetStrCharByChar();
             if (password == null)
                 return null;
@@ -372,121 +450,67 @@ namespace ConsoleApp
         }
 
         public static Cashier? ChooseCashierScreen(List<Cashier> cashiers) {
+            Alert("Enter your Cashier Id:", 4, 1, ConsoleColor.Yellow, false, true);
+
+            string str = $"        +----+{new string('-', 34)}+";
+
+            // Print out the cashiers table
+            Console.Write("\n\n");
+            Console.WriteLine(str);
+            Console.WriteLine($"        | Id |               {"Name", -19}|");
+            Console.WriteLine(str);
+
+            foreach (Cashier cashier in cashiers)
+                Console.WriteLine($"        | {cashier.Id, -3}| {cashier.Name, -33}|");
+
+            Console.WriteLine(str);
+            Console.Write("\n\n    --- Enter 'esc' button to go back ---");
+
+            Alert("<- Input must be between 0 and 2,147,483,647.", 45, 1, ConsoleColor.Green, false);
             while (true) {
-                Alert("Enter your Cashier Id:", interrupt: false, cls: true);
-
-                string str = $"          +----+{new string('-', 34)}+";
-
-                // Print out the cashiers table
-                Console.Write("\n\n");
-                Console.WriteLine(str);
-                Console.WriteLine($"          | Id |               {"Name", -19}|");
-                Console.WriteLine(str);
-
-                foreach (Cashier cashier in cashiers)
-                    Console.WriteLine($"          | {cashier.Id, -3}| {cashier.Name, -33}|");
-
-                Console.WriteLine(str);
-                Console.Write("\n\n\n    --- Enter 'esc' button to go back ---");
-
-                Console.SetCursorPosition(27, 4);
-
-                int? id = GetIntCharByChar();
-
-                if (id == null)
-                    return null;
-                else {
-                    if (id > int.MinValue) {
-                        Cashier? cashier = cashiers.FirstOrDefault(c => c.Id == id);
-                        if (cashier != null)
-                            return cashier;
-                    }
-                    Alert("Invalid Id, Please try again.", 3, 20 + cashiers.Count, ConsoleColor.Red);
-                }
-            }
-        }
-
-        public static int CreateBillScreen(Cashier cashier) {
-            Console.Clear();
-            PrintButton("1. Add Product", 24, 14, 1);
-            PrintButton("2. Modify Product", 24, 69, 1);
-            PrintButton("3. Remove Product", 24, 14, 5);
-            PrintButton("4. Confirm Bill", 24, 69, 5);
-
-            Console.Write("\n\n\n");
-            Console.WriteLine("               ██████ ██████  ███████  █████  ████████ ███████     ██████  ██ ██      ██");
-            Console.WriteLine("              ██      ██   ██ ██      ██   ██    ██    ██          ██   ██ ██ ██      ██");
-            Console.WriteLine("              ██      ██████  █████   ███████    ██    █████       ██████  ██ ██      ██");
-            Console.WriteLine("              ██      ██   ██ ██      ██   ██    ██    ██          ██   ██ ██ ██      ██");
-            Console.WriteLine("               ██████ ██   ██ ███████ ██   ██    ██    ███████     ██████  ██ ███████ ███████\n\n\n");
-
-
-            Console.WriteLine($"Cashier: {cashier.Name}\n");
-
-            return ReadCmd();
-        }
-
-        public static int? GetIntCharByChar() { // Return null if user enter 'Esc', and return int.MinValue if int.TryParse() false
-            string? str = GetStrCharByChar();
-
-            if (str == null) return null;
-
-            if (int.TryParse(str, out int id))
-                return id;
-            
-            return int.MinValue;
-        }
-
-        public static Order? CreateOrder(int order_id) { // Return null if user enter 'Esc'
-            GoodBLL gbll = new();
-
-            while (true) {
-                Console.Write("\n\n    Enter Product's Id: ");
+                ClearRow(27, 1, 10);
                 int? id = GetIntCharByChar();
 
                 if (id != null) {
                     if (id > int.MinValue) {
-                        Good? good = gbll.GetGoodById((int)id);
-                        if (good != null) {
-                            while (true) {
-                                Console.Write("\nQuantity: ");
-                                int? quantity = GetIntCharByChar();
-                                if (quantity != null) {
-                                    if (quantity > 0) {
-                                        if (quantity <= gbll.GetCurrentQuantity((int)id)) // Return Int.MinValue if error happen, so this statement can only true if no error happen.
-                                            return new() { Id = order_id, Good_id = (int)id, Quantity = (int)quantity };
-                                        else {
-                                            Alert("Not enough goods left", 4, 12, ConsoleColor.Red);
-                                            continue;
-                                        }
-                                    }
-                                    else {
-                                        Alert("Quantity must be greater than 0", 4, 12, ConsoleColor.Red);
-                                        continue;
-                                    }
-                                }
-                                else break;
-                            }
+                        if (id > 0) {
+                            Cashier? cashier = cashiers.Find(c => c.Id == id);
+                            if (cashier != null)
+                                return cashier;
+
+                            Alert("Cashier not found.                           ", 45, 1, ConsoleColor.Red, false);
                         }
-                        else {
-                            Alert("Product not found, please try again.", 4, 10, ConsoleColor.Red);
-                            continue;
-                        }
+                        else
+                            Alert("Id must be greater than 0.                           ", 45, 1, ConsoleColor.Red, false);
                     }
-                    else Alert("Invalid Id, Please try again.", 4, 10, ConsoleColor.Red);
+                    else
+                        Alert("Invalid Id.                                  ", 45, 1, ConsoleColor.Red, false);
                 }
-                else
-                    return null;
+                else return null;
             }
         }
-    
-        public static int ChooseOrderScreen(List<Order> orders) { // Return int.MinValue if error occur
-            GoodBLL gbll = new();
 
+        public static int CreateBillScreen(Cashier cashier, List<Order> orders) {
+            Console.Clear();
+            Console.Write("\n\n");
+            Console.WriteLine("                      ██████ ██████  ███████  █████  ████████ ███████     ██████  ██ ██      ██");
+            Console.WriteLine("                     ██      ██   ██ ██      ██   ██    ██    ██          ██   ██ ██ ██      ██");
+            Console.WriteLine("                     ██      ██████  █████   ███████    ██    █████       ██████  ██ ██      ██");
+            Console.WriteLine("                     ██      ██   ██ ██      ██   ██    ██    ██          ██   ██ ██ ██      ██");
+            Console.WriteLine("                      ██████ ██   ██ ███████ ██   ██    ██    ███████     ██████  ██ ███████ ███████\n\n");
+            PrintButton("1. Add Product", 23, 10, 9);
+            PrintButton("2. Modify Product", 23, 36, 9);
+            PrintButton("3. Remove Product", 23, 62, 9);
+            PrintButton("4. Confirm Bill", 23, 88, 9);
+
+            Alert($"Cashier: {cashier.Name}", 4, 13, interrupt: false);
+            Console.CursorTop += 5;
+
+            // Print out current products selected
+            GoodBLL gbll = new();
+    
             string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+";
 
-            // Print out the cashiers table
-            Console.Write("\n\n");
             Console.WriteLine(str);
             Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}|");
             Console.WriteLine(str);
@@ -496,17 +520,92 @@ namespace ConsoleApp
                 Good? good = gbll.GetGoodById(order.Good_id);
                 if (good != null)
                     Console.WriteLine($"          | {order.Id, -3}| {good.Name, -12}| {order.Quantity, -10}|");
-                
                 else {
-                    Alert("Some error occurs. Please try again or contact the database maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
+                    Alert("Connect to database failed. Please try again or contact the database maintenance department.", 4, 14, ConsoleColor.Red, cls: true);
                     return int.MinValue;
                 }
+            }
+
+            if (orders.Count == 0) {
+                Console.WriteLine($"          |{new string(' ', 30)}|");
+                Console.WriteLine($"          |   THERE'S NO PRODUCTS HERE   |");
+                Console.WriteLine($"          |{new string(' ', 30)}|");
             }
 
             Console.WriteLine(str);
             Console.Write("\n\n\n    --- Enter 'esc' button to go back ---");
 
-            return ReadCmd(end: orders.Count + 1);
+            return ReadCmd();
+        }
+
+        public static int? GetIntCharByChar(int max_length = 10) { // Return null if user enter 'Esc', and return int.MinValue if int.TryParse() false
+            string? str = GetStrCharByChar(max_length);
+
+            if (str == null) return null;
+
+            if (int.TryParse(str, out int id))
+                return id;
+            
+            return int.MinValue;
+        }
+
+        public static Order? CreateOrder(List<Order> orders) { // Return null if user enter 'Esc'
+            GoodBLL gbll = new();
+
+            Alert("- ADD PRODUCT -", top: 1, interrupt: false, cls: true);
+            Alert("Enter Product Id:", 8, 4, ConsoleColor.Yellow, false);
+            Alert("<- Input must be between 0 and 2,147,483,647.", 44, 4, ConsoleColor.Green, false);
+
+            while (true) {
+                ClearRow(26, 4, 10);
+                int? id = GetIntCharByChar();
+
+                if (id != null) {
+                    if (id > int.MinValue) {
+                        if (id > 0) {
+                            if (orders.Find(o => o.Good_id == id) == null) {
+                                Good? good = gbll.GetGoodById((int)id);
+                                if (good != null) {
+                                    Alert($"- SELECT -\n    Product's name: {good.Name}    -    In Storage: {good.Quantity}", top: 7, interrupt: false);
+                                    Alert("Quantity:", 8, 10, ConsoleColor.Yellow, false);
+                                    Alert("<- Input should be greater than 0.", 36, 10, ConsoleColor.Green, false);
+
+                                    while (true) {
+                                        ClearRow(18, 10, 10);
+                                        int? quantity = GetIntCharByChar();
+                                        if (quantity != null) {
+                                            if (quantity > int.MinValue) {
+                                                if (quantity > 0) {
+                                                    if (quantity <= gbll.GetCurrentQuantity((int)id)) // Return Int.MinValue if error happen, so this statement can only true if no error happen.
+                                                        return new() { Id = orders.Count + 1, Good_id = (int)id, Quantity = (int)quantity };
+
+                                                    Alert("Not enough product in storage.    ", 36, 10, ConsoleColor.Red, false);
+                                                }
+                                                else
+                                                    Alert("Quantity must be greater than 0   ", 36, 10, ConsoleColor.Red, false);
+                                            }
+                                            else
+                                                Alert("Invalid input.                    ", 36, 10, ConsoleColor.Red, false);
+                                        }
+                                        else break;
+                                    }
+                                }
+                                else Alert("Product not found.                           ", 44, 4, ConsoleColor.Red, false);
+                            }
+                            else Alert("Product is already exist in the bill.        ", 44, 4, ConsoleColor.Yellow, false);
+                        }
+                        else Alert("Product Id must be greater than 0            ", 44, 4, ConsoleColor.Red, false);
+                    }
+                    else Alert("Invalid Id.                                  ", 44, 4, ConsoleColor.Red, false);
+                }
+                else return null;
+            }
+        }
+
+        public static void ClearRow(int left, int top, int length = 1) {
+            Console.SetCursorPosition(left, top);
+            Console.Write(new string(' ', length));
+            Console.SetCursorPosition(left, top);
         }
     }
 }

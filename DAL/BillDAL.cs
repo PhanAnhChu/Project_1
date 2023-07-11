@@ -28,7 +28,7 @@ namespace DAL
             }
             catch (Exception ex)
             {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
                 return null;
             }
             finally {
@@ -53,7 +53,7 @@ namespace DAL
             }
             catch (Exception ex)
             {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
                 return new();
             }
             finally {
@@ -76,7 +76,7 @@ namespace DAL
                 return GetBills(Reader);
             }
             catch (Exception ex) {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
                 return new();
             }
             finally {
@@ -114,32 +114,60 @@ namespace DAL
 
                 try
                 {
-                    OrderDAL odal = new();
-                    query = "INSERT INTO Bills(cashier_id, created_date) VALUES (@c_id, @date);";
-
-                    int id = bill.Id;
+                    int id = 0;
+                    query = "INSERT INTO Bills(cashier_id, created_date) VALUES (@c_id, @date)";
 
                     MySqlCommand cmd = new(query, Con);
-                    cmd.Parameters.AddWithValue("@c_id", id);
+                    cmd.Parameters.AddWithValue("@c_id", bill.Cashier_id);
                     cmd.Parameters.AddWithValue("@date", DateTime.Now); // .ToString("yyyy-MM-dd")
                     // cmd.Parameters.AddWithValue("@name", bill.Customer_name);
 
                     cmd.Prepare();
                     cmd.ExecuteNonQuery();
+                    cmd.Parameters.Clear();
 
-                    if (odal.AddOrders(orders, id)) {
-                        bool success = true;
+                    cmd.CommandText = "SELECT Id FROM Bills ORDER BY Id Desc LIMIT 1";
+                    cmd.Prepare();
+
+                    MySqlDataReader reader = cmd.ExecuteReader();
+
+                    while (reader.Read()) {
+                        id = reader.GetInt32("id");
+                        break;
+                    }
+                    reader.Close();
     
-                        foreach (Order o in orders)
-                            if (!odal.DecreaseQuantity(o)) {
-                                success = false;
-                                break;
-                            }
+                    Console.WriteLine(id);
 
-                        if (success) return true;
+                    query = "INSERT INTO Orders(bill_id, good_id, quantity) VALUES ";
+                    List<MySqlParameter> parameters = new();
+
+                    for (int i = 0; i < orders.Count; ++i) { 
+                        cmd.Parameters.Clear();
+                        Order order = orders[i];
+                        query += $"(@bill_id{i}, @good_id{i}, @quantity{i}), ";
+
+                        parameters.Add(new MySqlParameter($"@bill_id{i}", id));
+                        parameters.Add(new MySqlParameter($"@good_id{i}", order.Good_id));
+                        parameters.Add(new MySqlParameter($"@quantity{i}", order.Quantity));
+
+                        cmd.CommandText = "UPDATE Goods SET Quantity = Quantity - @quan WHERE Id = @id;";
+                        cmd.Parameters.AddWithValue("@quan", order.Quantity);
+                        cmd.Parameters.AddWithValue("@id", order.Good_id);
+
+                        cmd.ExecuteNonQuery();
                     }
 
-                    throw new Exception("Add orders failed!");
+                    cmd.Parameters.Clear();
+
+                    cmd.CommandText = query.Remove(query.Length - 2);
+                    cmd.Parameters.AddRange(parameters.ToArray());
+
+                    cmd.Prepare();
+                    cmd.ExecuteNonQuery();
+
+                    tran.Commit();
+                    return true;
                 }
                 catch
                 {
@@ -149,7 +177,7 @@ namespace DAL
             } 
             catch (Exception ex)
             {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n - StackTrace: {ex.StackTrace}\n\n");
                 return false;
             }
             finally
@@ -180,7 +208,7 @@ namespace DAL
                 return result;
             }
             catch (Exception ex) {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
                 return float.MinValue;
             }
             finally {
