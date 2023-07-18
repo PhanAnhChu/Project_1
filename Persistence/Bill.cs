@@ -23,9 +23,11 @@ namespace Persistence
 
         public void PrintInvoice(List<Order> orders){
             GoodBLL gBLL = new();
+            CashierBLL cBLL = new();
+            Cashier cashier = cBLL.GetCashierById(Cashier_id);
             Console.WriteLine($"{" ",33}VTC MART");
             Console.WriteLine($"     Address: No. 18 Tam Trinh Street, Minh Khai Ward, Hai Ba Trung District, Hanoi");
-            Console.WriteLine($"     Time(chua them vao)");
+            Console.WriteLine($"     {Created_date}");
             Console.WriteLine($"     ten thu ngan");
             Console.WriteLine($"====================================================================================");
                 
