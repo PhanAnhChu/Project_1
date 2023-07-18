@@ -26,10 +26,10 @@ namespace Persistence
             CashierBLL cBLL = new();
             Cashier cashier = cBLL.GetCashierById(Cashier_id);
             Console.WriteLine($"{" ",33}VTC MART");
-            Console.WriteLine($"     Address: No. 18 Tam Trinh Street, Minh Khai Ward, Hai Ba Trung District, Hanoi");
-            Console.WriteLine($"     {Created_date}");
-            Console.WriteLine($"     ten thu ngan");
-            Console.WriteLine($"====================================================================================");
+            Console.WriteLine($"     Address: No. 18 Tam Trinh Street, Minh Khai Ward,\n     Hai Ba Trung District, Hanoi");
+            Console.WriteLine($"     Time: {Created_date}");
+            Console.WriteLine($"     Cashier: {cashier.Name}");
+            Console.WriteLine($"============================================================================");
                 
             string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+{new string('-', 11)}+{new string('-', 11)}+";
 
@@ -51,7 +51,7 @@ namespace Persistence
             }
 
                 Console.WriteLine(str);
-                Console.WriteLine($"----------                                                                ----------");
+                Console.WriteLine($"----------                                                        ----------");
                 Console.WriteLine($"\n          item:{" ", 20}(VAT Included){" ", 14}{item}");
                 Console.WriteLine($"\n          Cash:{" ", 45}${total}");
                 Console.WriteLine($"\n          {" ", 9}Invoices are only export within the day");

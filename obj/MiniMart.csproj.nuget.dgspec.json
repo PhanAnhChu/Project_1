@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\Code\\cs\\github\\MiniMart.csproj": {}
+    "E:\\VTCA\\GitHubPJ\\Project_1\\MiniMart.csproj": {}
   },
   "projects": {
-    "c:\\Users\\Code\\cs\\github\\MiniMart.csproj": {
+    "E:\\VTCA\\GitHubPJ\\Project_1\\MiniMart.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\Code\\cs\\github\\MiniMart.csproj",
+        "projectUniqueName": "E:\\VTCA\\GitHubPJ\\Project_1\\MiniMart.csproj",
         "projectName": "MiniMart",
-        "projectPath": "c:\\Users\\Code\\cs\\github\\MiniMart.csproj",
-        "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\Code\\cs\\github\\obj\\",
+        "projectPath": "E:\\VTCA\\GitHubPJ\\Project_1\\MiniMart.csproj",
+        "packagesPath": "C:\\Users\\ACER\\.nuget\\packages\\",
+        "outputPath": "E:\\VTCA\\GitHubPJ\\Project_1\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\ACER\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
