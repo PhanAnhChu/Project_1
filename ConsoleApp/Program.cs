@@ -71,7 +71,7 @@ namespace ConsoleApp
 
                     case 2: // Create Bill
                         int shiftValue = GetCurrentShiftValue();
-                        Bill bill = bill;
+                        Bill bill = new();
 
                         if (shiftValue == 0) {
                             Alert("The shift is not started yet.", 30, 14, ConsoleColor.Yellow, cls: true);
@@ -189,8 +189,8 @@ namespace ConsoleApp
 
                                         case 4:
                                             Console.Clear();
-                                            bill = new() { Cashier_id = cashier.Id, Created_date = DateTime.Now }
-                                            bill.PrintBill()
+                                            bill = new() { Cashier_id = cashier.Id, Created_date = DateTime.Now };
+                                            bill.PrintInvoice();
 
                                             while (true) {
                                                 Alert("Are you sure to create this bill ? (Y/N)", 40, 24, ConsoleColor.Yellow, false);
