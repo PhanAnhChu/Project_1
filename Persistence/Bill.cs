@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using BLL;
+using DAL;
 namespace Persistence
 {
     public class Bill
@@ -21,9 +22,15 @@ namespace Persistence
         public override int GetHashCode() => Id.GetHashCode();
 
         public void PrintInvoice(List<Order> orders){
+            GoodBLL gBLL = new();
             foreach (Order o in orders)
             {
-                Console.WriteLine(o.Id);
+                Good good = gBLL.GetGoodById(o.Good_id);
+                Console.Write(o.Id + " ");
+                Console.Write(good.Name + " ");
+                Console.Write(o.Quantity + " ");
+                Console.Write(good.Price + "\n");
+                
             }
         }
     }
