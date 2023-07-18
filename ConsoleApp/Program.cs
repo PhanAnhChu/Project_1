@@ -532,10 +532,10 @@ namespace ConsoleApp
             // Print out current products selected
             GoodBLL gbll = new();
     
-            string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+{new string('-', 11)}+";
+            string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+{new string('-', 11)}+{new string('-', 11)}+";
 
             Console.WriteLine(str);
-            Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}| {"Price", -10}|");
+            Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}| {"Price", -10}| {"Total", -10}|");
             Console.WriteLine(str);
 
             float total = 0;
@@ -543,7 +543,7 @@ namespace ConsoleApp
             foreach (Order order in orders) {
                 Good? good = gbll.GetGoodById(order.Good_id);
                 if (good != null) {
-                    Console.WriteLine($"          | {order.Id, -3}| {good.Name, -12}| {order.Quantity, -10}| {good.Price, -10}|");
+                    Console.WriteLine($"          | {order.Id, -3}| {good.Name, -12}| {order.Quantity, -10}| {good.Price, -10}| {good.Price * order.Quantity, -10}|");
                     total += good.Price * order.Quantity;
                 }
                 else {
@@ -553,9 +553,9 @@ namespace ConsoleApp
             }
 
             if (orders.Count == 0) {
-                Console.WriteLine($"          |{new string(' ', 42)}|");
-                Console.WriteLine($"          |         THERE'S NO PRODUCTS HERE         |");
-                Console.WriteLine($"          |{new string(' ', 42)}|");
+                Console.WriteLine($"          |{new string(' ', 54)}|");
+                Console.WriteLine($"          |               THERE'S NO PRODUCTS HERE               |");
+                Console.WriteLine($"          |{new string(' ', 54)}|");
             }
 
             Console.WriteLine(str);
