@@ -38,6 +38,32 @@ namespace DAL
             }
         }
 
+        public Cashier? GetCashierById(int id)
+        {
+            try
+            {
+                Con.Open();
+                query = @"SELECT * FROM Cashiers
+                          WHERE id = @id LIMIT 1";
+
+                MySqlCommand cmd = new(query, Con);
+                cmd.Parameters.AddWithValue("@id", id);
+
+                cmd.Prepare();
+
+                using MySqlDataReader Reader = cmd.ExecuteReader();
+                return GetCashiers(Reader)[0];
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                return null;
+            }
+            finally {
+                Con.Close();
+            }
+        }
+
         public List<Cashier> GetCashiers(int page)
         {
             try
