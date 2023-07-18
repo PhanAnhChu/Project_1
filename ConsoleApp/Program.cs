@@ -190,7 +190,7 @@ namespace ConsoleApp
                                         case 4:
                                             Console.Clear();
                                             bill = new() { Cashier_id = cashier.Id, Created_date = DateTime.Now };
-                                            bill.PrintInvoice();
+                                            bill.PrintInvoice(orders);
 
                                             while (true) {
                                                 Alert("Are you sure to create this bill ? (Y/N)", 40, 24, ConsoleColor.Yellow, false);
@@ -532,17 +532,20 @@ namespace ConsoleApp
             // Print out current products selected
             GoodBLL gbll = new();
     
-            string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+";
+            string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+{new string('-', 11)}+";
 
             Console.WriteLine(str);
-            Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}|");
+            Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}| {"Price", -10}|");
             Console.WriteLine(str);
 
+            float total = 0;
             // An order are only created if 'Good_Id' is valid. So in case of error, it's not the code that causes it
             foreach (Order order in orders) {
                 Good? good = gbll.GetGoodById(order.Good_id);
-                if (good != null)
-                    Console.WriteLine($"          | {order.Id, -3}| {good.Name, -12}| {order.Quantity, -10}|");
+                if (good != null) {
+                    Console.WriteLine($"          | {order.Id, -3}| {good.Name, -12}| {order.Quantity, -10}| {good.Price, -10}|");
+                    total += good.Price * order.Quantity;
+                }
                 else {
                     Alert("Connect to database failed. Please try again or contact the database maintenance department.", 4, 14, ConsoleColor.Red, cls: true);
                     return int.MinValue;
@@ -550,12 +553,13 @@ namespace ConsoleApp
             }
 
             if (orders.Count == 0) {
-                Console.WriteLine($"          |{new string(' ', 30)}|");
-                Console.WriteLine($"          |   THERE'S NO PRODUCTS HERE   |");
-                Console.WriteLine($"          |{new string(' ', 30)}|");
+                Console.WriteLine($"          |{new string(' ', 42)}|");
+                Console.WriteLine($"          |         THERE'S NO PRODUCTS HERE         |");
+                Console.WriteLine($"          |{new string(' ', 42)}|");
             }
 
             Console.WriteLine(str);
+            Console.WriteLine($"\n{' ', 40}Total: ${total}");
             Console.Write("\n\n\n    --- Enter 'esc' button to go back ---");
 
             return ReadCmd();

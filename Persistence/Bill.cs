@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using DAL;
+
 namespace Persistence
 {
     public class Bill
@@ -19,9 +19,8 @@ namespace Persistence
         }
 
         public override int GetHashCode() => Id.GetHashCode();
-        public void PrintInvoice(){
-            OrderDAL odal = new();
-            List<Order> orders = odal.GetOrdersFromBill(this);
+
+        public void PrintInvoice(List<Order> orders){
             foreach (Order o in orders)
             {
                 Console.WriteLine(o.Id);
