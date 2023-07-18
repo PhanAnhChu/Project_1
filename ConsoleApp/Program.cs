@@ -13,7 +13,7 @@ namespace ConsoleApp
         // Control the start/end time of shift 1 & 2
         static TimeSpan startTime1 = new(8, 0, 0);
         static TimeSpan startTime2 = new(15, 0, 0);
-        static TimeSpan endTime = new(23, 59, 0);
+        static TimeSpan endTime = new(22, 0, 0);
 
         public static void Main()
         {
@@ -87,7 +87,7 @@ namespace ConsoleApp
                                 Alert("Cashiers from previous shift must log out first.", 25, 14, ConsoleColor.Yellow, cls: true);
                             else {
                                 Cashier? cashier = ChooseCashierScreen(list);
-                
+
                                 while (cashier != null) {
                                     bool confirm = false;
 
@@ -102,7 +102,7 @@ namespace ConsoleApp
                                                 orders.Add(order);
         
                                             break;
-                                        
+
                                         case 2:
                                             Alert("- MODIFY PRODUCT -", 40, 15, interrupt: false);
                                             Alert("Enter Product Id:", 8, 17, ConsoleColor.Yellow, false);
@@ -162,7 +162,7 @@ namespace ConsoleApp
                                             }
 
                                             break;
-                            
+
                                         case 3:
                                             Alert("- REMOVE PRODUCT -", 40, 15, interrupt: false);
                                             Alert("Enter Product Id:", 8, 17, ConsoleColor.Yellow, false);
@@ -188,14 +188,15 @@ namespace ConsoleApp
 
                                         case 4:
                                             while (true) {
-                                                ConsoleKey? key = Alert("Are you sure to create this bill ? (Y/N)", 4, 15 + orders.Count, ConsoleColor.Yellow);
+                                                Alert("Are you sure to create this bill ? (Y/N)", 40, 24, ConsoleColor.Yellow, false);
+                                                ConsoleKey key = Console.ReadKey().Key;
                                                 if (key == ConsoleKey.Y) {
                                                     confirm = true;
                                                     break;
                                                 }
-                                                else if (key == ConsoleKey.N || key == null) break;
+                                                else if (key == ConsoleKey.N || key == ConsoleKey.Escape) break;
                                                 else {
-                                                    Alert("Please enter 'Y' or 'N' !", 4, 18 + orders.Count, ConsoleColor.Red);
+                                                    Alert("Please enter 'Y' or 'N' !", 40, 24, ConsoleColor.Red);
                                                     continue;
                                                 }
                                             }
@@ -372,6 +373,12 @@ namespace ConsoleApp
                 return now.Add(new(0, 15, 0)) >= startTime2 && now < endTime;
         }
 
+        public static void ClearRow(int left, int top, int length = 1) {
+            Console.SetCursorPosition(left, top);
+            Console.Write(new string(' ', length));
+            Console.SetCursorPosition(left, top);
+        }
+
         public static string? GetStrCharByChar(int max_length = 64)
         {
             Console.CursorVisible = true;
@@ -447,6 +454,17 @@ namespace ConsoleApp
                 return 2;
             
             return 0;
+        }
+
+        public static int? GetIntCharByChar(int max_length = 10) { // Return null if user enter 'Esc', and return int.MinValue if int.TryParse() false
+            string? str = GetStrCharByChar(max_length);
+
+            if (str == null) return null;
+
+            if (int.TryParse(str, out int id))
+                return id;
+            
+            return int.MinValue;
         }
 
         public static Cashier? ChooseCashierScreen(List<Cashier> cashiers) {
@@ -538,17 +556,6 @@ namespace ConsoleApp
             return ReadCmd();
         }
 
-        public static int? GetIntCharByChar(int max_length = 10) { // Return null if user enter 'Esc', and return int.MinValue if int.TryParse() false
-            string? str = GetStrCharByChar(max_length);
-
-            if (str == null) return null;
-
-            if (int.TryParse(str, out int id))
-                return id;
-            
-            return int.MinValue;
-        }
-
         public static Order? CreateOrder(List<Order> orders) { // Return null if user enter 'Esc'
             GoodBLL gbll = new();
 
@@ -600,12 +607,6 @@ namespace ConsoleApp
                 }
                 else return null;
             }
-        }
-
-        public static void ClearRow(int left, int top, int length = 1) {
-            Console.SetCursorPosition(left, top);
-            Console.Write(new string(' ', length));
-            Console.SetCursorPosition(left, top);
         }
     }
 }

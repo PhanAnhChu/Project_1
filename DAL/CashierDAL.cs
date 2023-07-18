@@ -16,10 +16,8 @@ namespace DAL
             try
             {
                 Con.Open();
-                query = @"SELECT id, name FROM Cashiers
-                          INNER JOIN Accounts ON id = cashier_id
+                query = @"SELECT * FROM Cashiers
                           WHERE username = @username AND password = @password LIMIT 1";
-
 
                 MySqlCommand cmd = new(query, Con);
                 cmd.Parameters.AddWithValue("@username", username);
