@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Formats.Tar;
 using BLL;
 using Persistence;
 
@@ -27,6 +28,7 @@ namespace ConsoleApp
             BillBLL bbll = new(); // Do things with Bill
             ShiftBLL sbll = new(); // Do things with Shift
             GoodBLL gbll = new();
+            OrderBLL obll = new();
 
             while (running)
             {
@@ -52,11 +54,14 @@ namespace ConsoleApp
                                     Cashier? cashier = cbll.GetCashierByLogin(strs[0], strs[1]);
                                     if (cashier != null)
                                     {
-                                        loginList[--cmd].Add(cashier);
+                                        if (cashier.Status) {
+                                            loginList[--cmd].Add(cashier);
 
-                                        screen = 0;
-                                        Alert($"Login successfully. Hello {cashier.Name}.", 4, 27);
-                                        break;
+                                            screen = 0;
+                                            Alert($"Login successfully. Hello {cashier.Name}.", 4, 27);
+                                        }
+                                        else if (Alert("ACCOUNT DON'T HAVE PERMISSION TO LOGIN!", 4, 27, ConsoleColor.Red) == ConsoleKey.Escape)
+                                            break;
                                     }
                                     else if (Alert("ACCOUNT NOT FOUND!", 4, 27, ConsoleColor.Red) == ConsoleKey.Escape)
                                         break;
@@ -71,7 +76,6 @@ namespace ConsoleApp
 
                     case 2: // Create Bill
                         int shiftValue = GetCurrentShiftValue();
-                        Bill bill = new();
 
                         if (shiftValue == 0) {
                             Alert("The shift is not started yet.", 30, 14, ConsoleColor.Yellow, cls: true);
@@ -90,6 +94,7 @@ namespace ConsoleApp
                                 Cashier? cashier = ChooseCashierScreen(list);
 
                                 while (cashier != null) {
+                                    Bill new_bill = new() { Cashier_id = cashier.Id };
                                     bool confirm = false;
 
                                     cmd = CreateBillScreen(cashier, orders);
@@ -188,18 +193,14 @@ namespace ConsoleApp
                                             break;
 
                                         case 4:
-                                            Console.Clear();
-                                            bill = new() { Cashier_id = cashier.Id, Created_date = DateTime.Now };
-                                            bill.PrintInvoice(orders);
-
                                             while (true) {
-                                                Alert("Are you sure to create this bill ? (Y/N)", 40, 24, ConsoleColor.Yellow, false);
-                                                ConsoleKey key = Console.ReadKey().Key;
-                                                if (key == ConsoleKey.Y) {
+                                                Alert("Are you sure to create this bill ? (Y/N)", 40, 24, ConsoleColor.Yellow, false, true);
+                                                ConsoleKey input = Console.ReadKey().Key;
+                                                if (input == ConsoleKey.Y) {
                                                     confirm = true;
                                                     break;
                                                 }
-                                                else if (key == ConsoleKey.N || key == ConsoleKey.Escape) break;
+                                                else if (input == ConsoleKey.N || input == ConsoleKey.Escape) break;
                                                 else {
                                                     Alert("Please enter 'Y' or 'N' !", 40, 24, ConsoleColor.Red);
                                                     continue;
@@ -209,9 +210,12 @@ namespace ConsoleApp
                                     }
 
                                     if (confirm) {
-                                        if (bbll.AddBill(bill, orders)) {
+                                        new_bill.Created_date = DateTime.Now;
+                                        if (bbll.AddBill(new_bill, orders)) {
                                             orders.Clear();
                                             Alert("Add Bill successfully!", 4, 18 + orders.Count);
+                                            if (!new_bill.PrintInvoice(orders))
+                                                Alert("Connect to database failed. Please try again or contact the database maintenance department.", 4, 14, ConsoleColor.Red, cls: true);
                                         }
                                         else Alert("Some error occurs. Please try again or contact the database maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
 
@@ -225,7 +229,27 @@ namespace ConsoleApp
                         break;
 
                     case 3:
-                        running = false;
+                        ConsoleKey key = ConsoleKey.None;
+                        int page = 0;
+                        int idx = 1;
+                        Bill bill = new();
+
+                        while (key != ConsoleKey.Escape) {
+                            key = PrintBillList(0, idx);
+                            if (key == ConsoleKey.UpArrow)    --idx;
+                            else if (key == ConsoleKey.DownArrow)    ++idx;
+                            else if (key == ConsoleKey.LeftArrow)    --page;
+                            else if (key == ConsoleKey.RightArrow)    ++page;
+                            else if (key == ConsoleKey.Enter) {
+                                bill = bbll.GetBills(page)[idx - 1];
+                                break;
+                            }
+                            else screen = 0;
+                        }
+
+                        bill.PrintInvoice(obll.GetOrdersFromBill(bill));
+                        Console.ReadKey();
+
                         break;
 
                     case 4:
@@ -256,9 +280,9 @@ namespace ConsoleApp
 
                                 if (float.TryParse(Console.ReadLine(), out float actual))
                                 {
-                                    ConsoleKey? key = Alert($"Reporter: {reporter.Name} - Id: {reporter.Id}\nAre you sure to report this ? (Y/N)", 4, 8, ConsoleColor.Yellow);
+                                    ConsoleKey? input = Alert($"Reporter: {reporter.Name} - Id: {reporter.Id}\nAre you sure to report this ? (Y/N)", 4, 8, ConsoleColor.Yellow);
 
-                                    if (key == ConsoleKey.Y) {
+                                    if (input == ConsoleKey.Y) {
                                         if (sbll.AddShift(timeLog, DateTime.Now, reporter.Id, total, actual)) {
                                             list.Clear();
 
@@ -269,7 +293,7 @@ namespace ConsoleApp
                                         else
                                             Alert("Some error occurs. Please try again or contact the maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
                                     }
-                                    else if (key == ConsoleKey.N || key == null) break;
+                                    else if (input == ConsoleKey.N || input == null) break;
                                     else {
                                         Alert("Please enter 'Y' or 'N' !", 4, 13, ConsoleColor.Red);
                                         continue;
@@ -554,7 +578,7 @@ namespace ConsoleApp
 
             if (orders.Count == 0) {
                 Console.WriteLine($"          |{new string(' ', 54)}|");
-                Console.WriteLine($"          |               THERE'S NO PRODUCTS HERE               |");
+                Console.WriteLine("          |               THERE'S NO PRODUCTS HERE               |");
                 Console.WriteLine($"          |{new string(' ', 54)}|");
             }
 
@@ -615,6 +639,86 @@ namespace ConsoleApp
                     else Alert("Invalid Id.                                  ", 44, 4, ConsoleColor.Red, false);
                 }
                 else return null;
+            }
+        }
+    
+        public static ConsoleKey PrintBillList(int page, int index = 1) {
+            Console.Clear();
+            BillBLL bbll = new();
+            List<Bill> bills = bbll.GetBills(page);
+
+            Console.Write("\n\n");
+            Console.WriteLine("                         ██   ██ ██ ███████ ████████  ██████  ██████  ██    ██");
+            Console.WriteLine("                         ██   ██ ██ ██         ██    ██    ██ ██   ██  ██  ██");
+            Console.WriteLine("                         ███████ ██ ███████    ██    ██    ██ ██████    ████");
+            Console.WriteLine("                         ██   ██ ██      ██    ██    ██    ██ ██   ██    ██");
+            Console.WriteLine("                         ██   ██ ██ ███████    ██     ██████  ██   ██    ██\n\n\n\n");
+
+            Alert("Use arrow key to interact with the screen", 4, 8, interrupt: false);
+
+            string str = $"          +----+{new string('-', 30)}+{new string('-', 15)}+";
+
+            Console.WriteLine(str);
+            Console.WriteLine($"          | Id |         {"Created Date", -21}| {"Total Price", -14}|");
+            Console.WriteLine(str);
+
+            for (int i = 0; i < bills.Count; ++i) {
+                Bill b = bills[i];
+                if (i == index - 1)
+                    Console.ForegroundColor = ConsoleColor.Green;
+
+                Console.WriteLine($"          | {b.Id, -3}| {b.Created_date, -29}| {bbll.CheckTotalPrice(b.Id), -14}|");
+
+                Console.ResetColor();
+            }
+
+            if (bills.Count == 0) {
+                Console.WriteLine($"          |{new string(' ', 51)}|");
+                Console.WriteLine("          |                 THERE'S NO BILLS HERE                 |");
+                Console.WriteLine($"          |{new string(' ', 51)}|");
+            }
+
+
+            bool right_exist = false, left_exist = false, down_exist = false, up_exist = (index > 1);
+
+            Console.WriteLine(str);
+            if (page > 0) {
+                Console.Write("          <<");
+                left_exist = true;
+            }
+            
+            PrintButton($"{page + 1}", 6, 15, 13 + bills.Count);
+
+            if (bills.Count == 10) {
+                Console.Write("                    >>");
+                right_exist = true;
+            }
+
+            if (bills.Count > index) down_exist = true;
+
+            Console.Write("\n\n\n    --- Enter 'esc' button to go back ---");
+
+            ConsoleKey key;
+            while (true) {
+                key = Console.ReadKey().Key;
+
+                if (key == ConsoleKey.Escape)
+                    return key;
+                
+                if (key == ConsoleKey.Enter && index <= bills.Count)
+                    return key;
+
+                if (key == ConsoleKey.RightArrow && right_exist)
+                    return key;
+                
+                if (key == ConsoleKey.LeftArrow && left_exist)
+                    return key;
+                
+                if (key == ConsoleKey.DownArrow && down_exist)
+                    return key;
+                
+                if (key == ConsoleKey.UpArrow && up_exist)
+                    return key;
             }
         }
     }

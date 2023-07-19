@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using BLL;
-using DAL;
+
 namespace Persistence
 {
     public class Bill
@@ -21,34 +21,37 @@ namespace Persistence
 
         public override int GetHashCode() => Id.GetHashCode();
 
-        public void PrintInvoice(List<Order> orders){
+        public bool PrintInvoice(List<Order> orders) {
+            Console.Clear();
             GoodBLL gBLL = new();
             CashierBLL cBLL = new();
-            Cashier cashier = cBLL.GetCashierById(Cashier_id);
-            Console.WriteLine($"{" ",33}VTC MART");
-            Console.WriteLine($"     Address: No. 18 Tam Trinh Street, Minh Khai Ward,\n     Hai Ba Trung District, Hanoi");
-            Console.WriteLine($"     Time: {Created_date}");
-            Console.WriteLine($"     Cashier: {cashier.Name}");
-            Console.WriteLine($"============================================================================");
-                
-            string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+{new string('-', 11)}+{new string('-', 11)}+";
+            Cashier? cashier = cBLL.GetCashierById(Cashier_id);
 
-            Console.WriteLine(str);
-            Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}| {"Price", -10}| {"Total", -10}|");
-            Console.WriteLine(str);
-            float total = 0;
-            int item = 0;
-            foreach (Order o in orders)
-            {
-                Good good = gBLL.GetGoodById(o.Good_id);
-                // Console.Write(o.Id + " ");
-                // Console.Write(good.Name + " ");
-                // Console.Write(o.Quantity + " ");
-                // Console.Write(good.Price + "\n");
-                Console.WriteLine($"          | {o.Id, -3}| {good.Name, -12}| {o.Quantity, -10}| {good.Price, -10}| {good.Price * o.Quantity, -10}|");
-                total += good.Price * o.Quantity;
-                item = item + o.Quantity;
-            }
+            if (cashier != null) {
+                Console.WriteLine($"{" ", 33}VTC MART");
+                Console.WriteLine($"     Address: No. 18 Tam Trinh Street, Minh Khai Ward,\n     Hai Ba Trung District, Hanoi");
+                Console.WriteLine($"     Time: {Created_date}");
+                Console.WriteLine($"     Cashier: {cashier.Name}");
+                Console.WriteLine($"============================================================================");
+                    
+                string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+{new string('-', 11)}+{new string('-', 11)}+";
+
+                Console.WriteLine(str);
+                Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}| {"Price", -10}| {"Total", -10}|");
+                Console.WriteLine(str);
+                float total = 0;
+                int item = 0;
+
+                foreach (Order o in orders)
+                {
+                    Good? good = gBLL.GetGoodById(o.Good_id);
+                    if (good != null) {
+                        Console.WriteLine($"          | {o.Id, -3}| {good.Name, -12}| {o.Quantity, -10}| {good.Price, -10}| {good.Price * o.Quantity, -10}|");
+                        total += good.Price * o.Quantity;
+                        item += o.Quantity;
+                    }
+                    else return false;
+                }
 
                 Console.WriteLine(str);
                 Console.WriteLine($"----------                                                        ----------");
@@ -56,6 +59,8 @@ namespace Persistence
                 Console.WriteLine($"\n          Cash:{" ", 45}${total}");
                 Console.WriteLine($"\n          {" ", 9}Invoices are only export within the day");
                 Console.WriteLine($"\n          {" ", 14}Thank you for your purchase!");
+            }
+            return false;
         }       
     }
 }

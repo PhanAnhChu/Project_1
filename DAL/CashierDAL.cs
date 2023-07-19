@@ -98,7 +98,8 @@ namespace DAL
                 Cashier cashier = new()
                 {
                     Id = reader.GetInt32("id"),
-                    Name = reader.GetString("name")
+                    Name = reader.GetString("name"),
+                    Status = reader.GetBoolean("status")
                 };
 
                 list.Add(cashier);
