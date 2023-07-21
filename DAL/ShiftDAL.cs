@@ -39,7 +39,7 @@ namespace DAL {
             }
             catch (Exception ex)
             {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
                 return false;
             }
             finally {
@@ -54,12 +54,12 @@ namespace DAL {
 
                 float total = 0;
                 foreach (Bill bill in bills)
-                    total += bdal.CheckTotalPrice(bill.Id);
+                    total += bdal.CheckTotalPrice(bill);
                 
                 return total;
             }
             catch (Exception ex) {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
                 return float.MinValue;
             }
         }

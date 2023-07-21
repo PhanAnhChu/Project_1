@@ -46,7 +46,7 @@ namespace Persistence
                 {
                     Good? good = gBLL.GetGoodById(o.Good_id);
                     if (good != null) {
-                        Console.WriteLine($"          | {o.Id, -3}| {good.Name, -12}| {o.Quantity, -10}| {good.Price, -10}| {good.Price * o.Quantity, -10}|");
+                        Console.WriteLine($"          | {o.Id, -3}| {good.Name, -12}| {o.Quantity, -10}| {good.Price, -10}| ${good.Price * o.Quantity, -9}|");
                         total += good.Price * o.Quantity;
                         item += o.Quantity;
                     }

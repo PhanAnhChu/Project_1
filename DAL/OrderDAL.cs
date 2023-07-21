@@ -28,8 +28,33 @@ namespace DAL
             }
             catch (Exception ex)
             {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
                 return null;
+            }
+            finally {
+                Con.Close();
+            }
+        }
+
+        public List<Order> GetOrdersFromBill(Bill bill)
+        {
+            try
+            {
+                Con.Open();
+                query = "SELECT Orders.* FROM Orders INNER JOIN Bills ON bill_id = @id";
+
+                MySqlCommand cmd = new(query, Con);
+                cmd.Parameters.AddWithValue("@id", bill.Id);
+
+                cmd.Prepare();
+
+                using MySqlDataReader Reader = cmd.ExecuteReader();
+                return GetOrders(Reader);
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
+                return new();
             }
             finally {
                 Con.Close();
@@ -42,45 +67,17 @@ namespace DAL
 
             while (reader.Read())
             {
-                Order order = new()
+                list.Add(new()
                 {
                     Id = reader.GetInt32("id"),
                     Bill_id = reader.GetInt32("bill_id"),
                     Good_id = reader.GetInt32("good_id"),
-                    Quantity = reader.GetInt32("quantity")
-                };
-
-                list.Add(order);
+                    Quantity = reader.GetInt32("quantity"),
+                    Price = reader.GetFloat("price")
+                });
             }
 
             return list;
-        }
-
-        public List<Order> GetOrdersFromBill(Bill bill)
-        {
-            try
-            {
-                Con.Open();
-                query = @"SELECT o.id, bill_id, good_id, quantity FROM Orders o
-                          INNER JOIN Bills
-                          ON bill_id = @id";
-
-                MySqlCommand cmd = new(query, Con);
-                cmd.Parameters.AddWithValue("@id", bill.Id);
-
-                cmd.Prepare();
-
-                using MySqlDataReader Reader = cmd.ExecuteReader();
-                return GetOrders(Reader);
-            }
-            catch (Exception ex)
-            {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
-                return new();
-            }
-            finally {
-                Con.Close();
-            }
         }
     }
 }

@@ -119,7 +119,7 @@ namespace DAL
 
                     MySqlCommand cmd = new(query, Con);
                     cmd.Parameters.AddWithValue("@c_id", bill.Cashier_id);
-                    cmd.Parameters.AddWithValue("@date", DateTime.Now); // .ToString("yyyy-MM-dd")
+                    cmd.Parameters.AddWithValue("@date", DateTime.Now);
                     // cmd.Parameters.AddWithValue("@name", bill.Customer_name);
 
                     cmd.Prepare();
@@ -139,22 +139,24 @@ namespace DAL
     
                     Console.WriteLine(id);
 
-                    query = "INSERT INTO Orders(bill_id, good_id, quantity) VALUES ";
+                    query = "INSERT INTO Orders(bill_id, good_id, quantity, price) VALUES ";
                     List<MySqlParameter> parameters = new();
 
                     for (int i = 0; i < orders.Count; ++i) { 
                         cmd.Parameters.Clear();
                         Order order = orders[i];
-                        query += $"(@bill_id{i}, @good_id{i}, @quantity{i}), ";
+                        query += $"(@bill_id{i}, @good_id{i}, @quantity{i}, @price{i}), ";
 
                         parameters.Add(new MySqlParameter($"@bill_id{i}", id));
                         parameters.Add(new MySqlParameter($"@good_id{i}", order.Good_id));
                         parameters.Add(new MySqlParameter($"@quantity{i}", order.Quantity));
+                        parameters.Add(new MySqlParameter($"@price{i}", order.Price));
 
                         cmd.CommandText = "UPDATE Goods SET Quantity = Quantity - @quan WHERE Id = @id;";
                         cmd.Parameters.AddWithValue("@quan", order.Quantity);
                         cmd.Parameters.AddWithValue("@id", order.Good_id);
 
+                        cmd.Prepare();
                         cmd.ExecuteNonQuery();
                     }
 
@@ -186,16 +188,14 @@ namespace DAL
             }
         }
 
-        public float CheckTotalPrice(int bill_id) {
+        public float CheckTotalPrice(Bill bill) {
             try {
                 Con.Open();
-                query = @"SELECT SUM(goods.price * orders.quantity) AS total
-                          FROM orders
-                          JOIN goods ON orders.good_id = goods.id
-                          WHERE orders.bill_id = @id;";
+                query = @"SELECT SUM(orders.price * orders.quantity) AS total
+                          FROM orders WHERE orders.bill_id = @id;";
 
                 MySqlCommand cmd = new(query, Con);
-                cmd.Parameters.AddWithValue("@id", bill_id);
+                cmd.Parameters.AddWithValue("@id", bill.Id);
 
                 cmd.Prepare();
                 float result = float.MinValue;
@@ -214,14 +214,6 @@ namespace DAL
             finally {
                 Con.Close();
             }
-        }
-
-        public float CheckTotalIncome(List<Bill> bills) {
-            float total = 0;
-            foreach (Bill bill in bills)
-                total += CheckTotalPrice(bill.Id);
-            
-            return total;
         }
     }
 }

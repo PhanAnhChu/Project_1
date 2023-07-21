@@ -4,6 +4,7 @@ namespace Persistence {
         public int Bill_id { get; set; }
         public int Good_id { get; set; }
         public int Quantity { get; set; }
+        public float Price { get; set; }
 
         public override bool Equals(object? obj)
         {

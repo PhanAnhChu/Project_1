@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Formats.Tar;
 using BLL;
 using Persistence;
 
@@ -139,7 +138,7 @@ namespace ConsoleApp
                                                                     ClearRow(85, position, 23);
                                                                     Alert("Not enough goods left, please try again.", 45, position, ConsoleColor.Red, interrupt: false);
                                                                 }
-                                                                else if (quantity < -1) {
+                                                                else if (quantity < 0) {
                                                                     if (quantity == int.MinValue) {
                                                                         ClearRow(78, position, 30);
                                                                         Alert("Invalid format, please try again.", 45, position, ConsoleColor.Red, interrupt: false);
@@ -567,7 +566,7 @@ namespace ConsoleApp
             foreach (Order order in orders) {
                 Good? good = gbll.GetGoodById(order.Good_id);
                 if (good != null) {
-                    Console.WriteLine($"          | {order.Id, -3}| {good.Name, -12}| {order.Quantity, -10}| {good.Price, -10}| {good.Price * order.Quantity, -10}|");
+                    Console.WriteLine($"          | {order.Id, -3}| {good.Name, -12}| {order.Quantity, -10}| ${good.Price, -9}| ${good.Price * order.Quantity, -9}|");
                     total += good.Price * order.Quantity;
                 }
                 else {
@@ -602,39 +601,31 @@ namespace ConsoleApp
 
                 if (id != null) {
                     if (id > int.MinValue) {
-                        if (id > 0) {
-                            if (orders.Find(o => o.Good_id == id) == null) {
-                                Good? good = gbll.GetGoodById((int)id);
-                                if (good != null) {
-                                    Alert($"- SELECT -\n    Product's name: {good.Name}    -    In Storage: {good.Quantity}", top: 7, interrupt: false);
-                                    Alert("Quantity:", 8, 10, ConsoleColor.Yellow, false);
-                                    Alert("<- Input should be greater than 0.", 36, 10, ConsoleColor.Green, false);
+                        if (orders.Find(o => o.Good_id == id) == null) {
+                            Good? good = gbll.GetGoodById((int)id);
+                            if (good != null) {
+                                Alert($"- SELECT -\n    Product's name: {good.Name}    -    In Storage: {good.Quantity}", top: 7, interrupt: false);
+                                Alert("Quantity:", 8, 10, ConsoleColor.Yellow, false);
+                                Alert("<- Input should be greater than 0.", 36, 10, ConsoleColor.Green, false);
 
-                                    while (true) {
-                                        ClearRow(18, 10, 10);
-                                        int? quantity = GetIntCharByChar();
-                                        if (quantity != null) {
-                                            if (quantity > int.MinValue) {
-                                                if (quantity > 0) {
-                                                    if (quantity <= gbll.GetCurrentQuantity((int)id)) // Return Int.MinValue if error happen, so this statement can only true if no error happen.
-                                                        return new() { Id = orders.Count + 1, Good_id = (int)id, Quantity = (int)quantity };
+                                while (true) {
+                                    ClearRow(18, 10, 10);
+                                    int? quantity = GetIntCharByChar();
+                                    if (quantity != null) {
+                                        if (quantity > int.MinValue) {
+                                            if (quantity <= gbll.GetCurrentQuantity((int)id)) // Return Int.MinValue if error happen, so this statement can only true if no error happen.
+                                                return new() { Id = orders.Count + 1, Good_id = good.Id, Quantity = (int)quantity, Price = good.Price };
 
-                                                    Alert("Not enough product in storage.    ", 36, 10, ConsoleColor.Red, false);
-                                                }
-                                                else
-                                                    Alert("Quantity must be greater than 0   ", 36, 10, ConsoleColor.Red, false);
-                                            }
-                                            else
-                                                Alert("Invalid input.                    ", 36, 10, ConsoleColor.Red, false);
+                                            Alert("Not enough product in storage.    ", 36, 10, ConsoleColor.Red, false);
                                         }
-                                        else break;
+                                        else Alert("Invalid input.                    ", 36, 10, ConsoleColor.Red, false);
                                     }
+                                    else break;
                                 }
-                                else Alert("Product not found.                           ", 44, 4, ConsoleColor.Red, false);
                             }
-                            else Alert("Product is already exist in the bill.        ", 44, 4, ConsoleColor.Yellow, false);
+                            else Alert("Product not found.                           ", 44, 4, ConsoleColor.Red, false);
                         }
-                        else Alert("Product Id must be greater than 0            ", 44, 4, ConsoleColor.Red, false);
+                        else Alert("Product is already exist in the bill.        ", 44, 4, ConsoleColor.Yellow, false);
                     }
                     else Alert("Invalid Id.                                  ", 44, 4, ConsoleColor.Red, false);
                 }
@@ -659,7 +650,7 @@ namespace ConsoleApp
             string str = $"          +----+{new string('-', 30)}+{new string('-', 15)}+";
 
             Console.WriteLine(str);
-            Console.WriteLine($"          | Id |         {"Created Date", -21}| {"Total Price", -14}|");
+            Console.WriteLine($"          | Id |         {"Created Date", -21}|  {"Total Price", -13}|");
             Console.WriteLine(str);
 
             for (int i = 0; i < bills.Count; ++i) {
@@ -667,19 +658,19 @@ namespace ConsoleApp
                 if (i == index - 1)
                     Console.ForegroundColor = ConsoleColor.Green;
 
-                Console.WriteLine($"          | {b.Id, -3}| {b.Created_date, -29}| {bbll.CheckTotalPrice(b.Id), -14}|");
+                Console.WriteLine($"          | {b.Id, -3}| {b.Created_date, -29}| {bbll.CheckTotalPrice(b), -14}|");
 
                 Console.ResetColor();
             }
 
             if (bills.Count == 0) {
                 Console.WriteLine($"          |{new string(' ', 51)}|");
-                Console.WriteLine("          |                 THERE'S NO BILLS HERE                 |");
+                Console.WriteLine("          |               THERE'S NO BILLS HERE               |");
                 Console.WriteLine($"          |{new string(' ', 51)}|");
             }
 
 
-            bool right_exist = false, left_exist = false, down_exist = false, up_exist = (index > 1);
+            bool right_exist = false, left_exist = false, down_exist = false, up_exist = index > 1;
 
             Console.WriteLine(str);
             if (page > 0) {
@@ -687,7 +678,7 @@ namespace ConsoleApp
                 left_exist = true;
             }
             
-            PrintButton($"{page + 1}", 6, 15, 13 + bills.Count);
+            PrintButton($"{page + 1}", 6, 15, 18 + bills.Count);
 
             if (bills.Count == 10) {
                 Console.Write("                    >>");

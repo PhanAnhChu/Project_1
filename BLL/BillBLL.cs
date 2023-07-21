@@ -18,8 +18,14 @@ namespace BLL
 
         public List<Bill> GetBillsFromShift(Shift shift) => bdal.GetBillsFromShift(shift);
 
-        public float CheckTotalPrice(int bill_id) => bdal.CheckTotalPrice(bill_id);
+        public float CheckTotalPrice(Bill bill) => bdal.CheckTotalPrice(bill);
 
-        public float CheckTotalIncome(List<Bill> bills) => bdal.CheckTotalIncome(bills);
+        public float CheckTotalIncome(List<Bill> bills) {
+            float total = 0;
+            foreach (Bill bill in bills)
+                total += CheckTotalPrice(bill);
+            
+            return total;
+        }
     }
 }
