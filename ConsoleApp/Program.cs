@@ -19,7 +19,7 @@ namespace ConsoleApp
         {
             bool running = true; // The Program will exit when this is set to 'false'
             int screen = 0; // Define the current screen
-            List<List<Cashier>> loginList = new() { new(), new() { new() { Id = 1, Name = "Phan Anh" } } }; // Store cashiers who login to shift 1 & 2
+            List<List<Cashier>> loginList = new() { new(), new() }; // Store cashiers who login to shift 1 & 2
             List<Order> orders = new();
 
             // Interact with database
@@ -58,6 +58,7 @@ namespace ConsoleApp
 
                                             screen = 0;
                                             Alert($"Login successfully. Hello {cashier.Name}.", 4, 27);
+                                            break;
                                         }
                                         else if (Alert("ACCOUNT DON'T HAVE PERMISSION TO LOGIN!", 4, 27, ConsoleColor.Red) == ConsoleKey.Escape)
                                             break;
@@ -213,7 +214,7 @@ namespace ConsoleApp
                                         if (bbll.AddBill(new_bill, orders)) {
                                             orders.Clear();
                                             Alert("Add Bill successfully!", 4, 18 + orders.Count);
-                                            if (!new_bill.PrintInvoice(orders))
+                                            if (!new_bill.PrintInvoice())
                                                 Alert("Connect to database failed. Please try again or contact the database maintenance department.", 4, 14, ConsoleColor.Red, cls: true);
                                         }
                                         else Alert("Some error occurs. Please try again or contact the database maintenance department.", 18, 14, ConsoleColor.Red, cls: true);
@@ -246,7 +247,7 @@ namespace ConsoleApp
                             else screen = 0;
                         }
 
-                        bill.PrintInvoice(obll.GetOrdersFromBill(bill));
+                        bill.PrintInvoice();
                         Console.ReadKey();
 
                         break;

@@ -21,13 +21,13 @@ namespace Persistence
 
         public override int GetHashCode() => Id.GetHashCode();
 
-        public bool PrintInvoice(List<Order> orders) {
+        public bool PrintInvoice() {
             Console.Clear();
-            GoodBLL gBLL = new();
             CashierBLL cBLL = new();
             Cashier? cashier = cBLL.GetCashierById(Cashier_id);
 
             if (cashier != null) {
+                GoodBLL gBLL = new();
                 Console.WriteLine($"{" ", 33}VTC MART");
                 Console.WriteLine($"     Address: No. 18 Tam Trinh Street, Minh Khai Ward,\n     Hai Ba Trung District, Hanoi");
                 Console.WriteLine($"     Time: {Created_date}");
@@ -41,6 +41,8 @@ namespace Persistence
                 Console.WriteLine(str);
                 float total = 0;
                 int item = 0;
+                OrderBLL obll = new();
+                List<Order> orders = obll.GetOrdersFromBill(this);
 
                 foreach (Order o in orders)
                 {
