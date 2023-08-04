@@ -9,7 +9,7 @@ namespace Persistence
         public int Id { get; set; }
         public int Cashier_id { get; set; }
         public DateTime Created_date { get; set; }
-        // public string Customer_name { get; set; }
+        public int? Customer_id { get; set; }
 
         public override bool Equals(object? obj)
         {
@@ -34,10 +34,10 @@ namespace Persistence
                 Console.WriteLine($"     Cashier: {cashier.Name}");
                 Console.WriteLine($"============================================================================");
                     
-                string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+{new string('-', 11)}+{new string('-', 11)}+";
+                string str = $"          +----+{new string('-', 13)}+{new string('-', 11)}+{new string('-', 15)}+{new string('-', 15)}+";
 
                 Console.WriteLine(str);
-                Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}| {"Price", -10}| {"Total", -10}|");
+                Console.WriteLine($"          | Id | {"Name", -12}| {"Quantity", -10}|     {"Price", -10}|     {"Total", -10}|");
                 Console.WriteLine(str);
                 float total = 0;
                 int item = 0;
@@ -48,7 +48,7 @@ namespace Persistence
                 {
                     Good? good = gBLL.GetGoodById(o.Good_id);
                     if (good != null) {
-                        Console.WriteLine($"          | {o.Id, -3}| {good.Name, -12}| {o.Quantity, -10}| {good.Price, -10}| ${good.Price * o.Quantity, -9}|");
+                        Console.WriteLine($"          | {o.Id, -3}| {good.Name, -12}| {o.Quantity, -10}| {good.Price, 10} VND |{good.Price * o.Quantity, 10} VND |");
                         total += good.Price * o.Quantity;
                         item += o.Quantity;
                     }
@@ -61,6 +61,8 @@ namespace Persistence
                 Console.WriteLine($"\n          Cash:{" ", 45}${total}");
                 Console.WriteLine($"\n          {" ", 9}Invoices are only export within the day");
                 Console.WriteLine($"\n          {" ", 14}Thank you for your purchase!");
+
+                return true;
             }
             return false;
         }       

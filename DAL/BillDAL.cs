@@ -41,7 +41,7 @@ namespace DAL
             try
             {
                 Con.Open();
-                query = "SELECT * FROM Bills ORDER BY Id Desc LIMIT @page, 10";
+                query = "SELECT * FROM Bills ORDER BY Id Desc LIMIT 10 OFFSET @page";
 
                 MySqlCommand cmd = new(query, Con);
                 cmd.Parameters.AddWithValue("@page", page*10);
@@ -95,9 +95,13 @@ namespace DAL
                 {
                     Id = reader.GetInt32("id"),
                     Cashier_id = reader.GetInt32("cashier_id"),
-                    Created_date = reader.GetDateTime("created_date"),
-                    // Customer_name = reader.GetString("customer_name")
+                    Created_date = reader.GetDateTime("created_date")
                 };
+
+                if (reader.IsDBNull(3))
+                    bill.Customer_id = null;
+                else
+                    bill.Customer_id = reader.GetInt32("customer_id");
 
                 list.Add(bill);
             }
@@ -115,12 +119,12 @@ namespace DAL
                 try
                 {
                     int id = 0;
-                    query = "INSERT INTO Bills(cashier_id, created_date) VALUES (@c_id, @date)";
+                    query = "INSERT INTO Bills(cashier_id, created_date, customer_id) VALUES (@c_id, @date, @customer)";
 
                     MySqlCommand cmd = new(query, Con);
                     cmd.Parameters.AddWithValue("@c_id", bill.Cashier_id);
                     cmd.Parameters.AddWithValue("@date", DateTime.Now);
-                    // cmd.Parameters.AddWithValue("@name", bill.Customer_name);
+                    cmd.Parameters.AddWithValue("@customer", bill.Customer_id);
 
                     cmd.Prepare();
                     cmd.ExecuteNonQuery();
@@ -136,8 +140,6 @@ namespace DAL
                         break;
                     }
                     reader.Close();
-    
-                    Console.WriteLine(id);
 
                     query = "INSERT INTO Orders(bill_id, good_id, quantity, price) VALUES ";
                     List<MySqlParameter> parameters = new();

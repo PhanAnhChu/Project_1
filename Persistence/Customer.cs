@@ -1,15 +1,17 @@
 namespace Persistence {
-    public class Cashier {
+    public class Customer {
         public int Id { get; set; }
 
         public string Name { get; set; } = "";
 
-        public bool Status { get; set; }
+        public string? Phone { get; set; }
+
+        public int Reward_Point { get; set; }
 
         public override bool Equals(object? obj)
         {
-            if (obj is Cashier cashier)
-                return cashier.Id == Id;
+            if (obj is Customer Customer)
+                return Customer.Id == Id;
 
             return false;
         }

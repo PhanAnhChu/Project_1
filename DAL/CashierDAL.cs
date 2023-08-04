@@ -30,7 +30,7 @@ namespace DAL
             }
             catch (Exception ex)
             {
-                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}");
+                File.AppendAllText("log.txt", $"{DateTime.Now} : {ex.Message}\n");
                 return null;
             }
             finally {

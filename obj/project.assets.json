@@ -1706,19 +1706,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ACER\\.nuget\\packages\\": {}
+    "C:\\Users\\admin\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\VTCA\\GitHubPJ\\Project_1\\MiniMart.csproj",
+      "projectUniqueName": "c:\\Users\\Code\\cs\\github\\MiniMart.csproj",
       "projectName": "MiniMart",
-      "projectPath": "E:\\VTCA\\GitHubPJ\\Project_1\\MiniMart.csproj",
-      "packagesPath": "C:\\Users\\ACER\\.nuget\\packages\\",
-      "outputPath": "E:\\VTCA\\GitHubPJ\\Project_1\\obj\\",
+      "projectPath": "c:\\Users\\Code\\cs\\github\\MiniMart.csproj",
+      "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
+      "outputPath": "c:\\Users\\Code\\cs\\github\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\ACER\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"

@@ -9,7 +9,7 @@ namespace DAL {
         string? query;
         public MySqlConnection Con = DbConfig.GetConnection();
 
-        public bool AddShift(DateTime startTime, DateTime endTime, int id, float expected, float actual) {
+        public bool AddShift(DateTime startTime, DateTime endTime, int reporter_id, float expected, float actual, int confirmer_id) {
             try
             {
                 Con.Open();
@@ -17,14 +17,15 @@ namespace DAL {
 
                 try
                 {
-                    query = "INSERT INTO Shifts(start_time, end_time, reporter_id, expected_income, actual_income) VALUES (@start, @end, @id, @expected, @actual)";
+                    query = "INSERT INTO Shifts(start_time, end_time, reporter_id, expected_income, actual_income, confirmer_id) VALUES (@start, @end, @id, @expected, @actual, @confirmer)";
 
                     MySqlCommand cmd = new(query, Con);
                     cmd.Parameters.AddWithValue("@start", startTime);
                     cmd.Parameters.AddWithValue("@end", endTime);
-                    cmd.Parameters.AddWithValue("@id", id);
+                    cmd.Parameters.AddWithValue("@id", reporter_id);
                     cmd.Parameters.AddWithValue("@expected", expected);
                     cmd.Parameters.AddWithValue("@actual", actual);
+                    cmd.Parameters.AddWithValue("@confirmer", confirmer_id);
 
                     cmd.Prepare();
                     cmd.ExecuteNonQuery();
