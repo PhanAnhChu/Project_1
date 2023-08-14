@@ -7,7 +7,7 @@
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8mb4 */;
+/*!50503 SET NAMES utf8 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -26,10 +26,13 @@ CREATE TABLE `bills` (
   `id` int NOT NULL AUTO_INCREMENT,
   `cashier_id` int NOT NULL,
   `created_date` datetime NOT NULL,
+  `customer_id` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `cashier_id` (`cashier_id`),
-  CONSTRAINT `bills_ibfk_1` FOREIGN KEY (`cashier_id`) REFERENCES `cashiers` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `customer_id` (`customer_id`),
+  CONSTRAINT `bills_ibfk_1` FOREIGN KEY (`cashier_id`) REFERENCES `cashiers` (`id`),
+  CONSTRAINT `bills_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -38,7 +41,7 @@ CREATE TABLE `bills` (
 
 LOCK TABLES `bills` WRITE;
 /*!40000 ALTER TABLE `bills` DISABLE KEYS */;
-INSERT INTO `bills` VALUES (14,1,'2023-07-14 15:51:15');
+INSERT INTO `bills` VALUES (3,1,'2023-08-09 14:58:02',1);
 /*!40000 ALTER TABLE `bills` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -54,6 +57,7 @@ CREATE TABLE `cashiers` (
   `name` varchar(32) NOT NULL,
   `username` varchar(64) NOT NULL,
   `password` varchar(64) NOT NULL,
+  `status` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -64,8 +68,35 @@ CREATE TABLE `cashiers` (
 
 LOCK TABLES `cashiers` WRITE;
 /*!40000 ALTER TABLE `cashiers` DISABLE KEYS */;
-INSERT INTO `cashiers` VALUES (1,'Phan Anh','anhcp7978','1234'),(2,'Minh Duc','mesterdbd','1234');
+INSERT INTO `cashiers` VALUES (1,'Phan Anh','anhcp7978','1234',1),(2,'Minh Duc','mesterdbd','1234',1);
 /*!40000 ALTER TABLE `cashiers` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `customers`
+--
+
+DROP TABLE IF EXISTS `customers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customers` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(32) NOT NULL,
+  `phone` varchar(10) DEFAULT NULL,
+  `reward_point` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `phone` (`phone`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customers`
+--
+
+LOCK TABLES `customers` WRITE;
+/*!40000 ALTER TABLE `customers` DISABLE KEYS */;
+INSERT INTO `customers` VALUES (1,'Khach Vang Lai',NULL,0);
+/*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -90,7 +121,7 @@ CREATE TABLE `goods` (
 
 LOCK TABLES `goods` WRITE;
 /*!40000 ALTER TABLE `goods` DISABLE KEYS */;
-INSERT INTO `goods` VALUES (1,'Milk',2.5,0),(2,'Eggs',3,15),(3,'Bread',1.5,15),(4,'Cheese',4,10),(5,'Butter',2,0),(6,'Juice',3.5,0),(7,'Coffee',5,8),(8,'Tea',4.5,10),(9,'Sugar',2,11),(10,'Flour',1.5,20);
+INSERT INTO `goods` VALUES (1,'Milk',2.5,91),(2,'Eggs',3,99),(3,'Bread',1.5,99),(4,'Cheese',4,99),(5,'Butter',2,98),(6,'Juice',3.5,99),(7,'Coffee',5,99),(8,'Tea',4.5,99),(9,'Sugar',2,99),(10,'Flour',1.5,99);
 /*!40000 ALTER TABLE `goods` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -106,12 +137,13 @@ CREATE TABLE `orders` (
   `bill_id` int NOT NULL,
   `good_id` int NOT NULL,
   `quantity` int NOT NULL,
+  `price` float NOT NULL,
   PRIMARY KEY (`id`),
   KEY `bill_id` (`bill_id`),
   KEY `good_id` (`good_id`),
   CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`bill_id`) REFERENCES `bills` (`id`),
   CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`good_id`) REFERENCES `goods` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -120,7 +152,7 @@ CREATE TABLE `orders` (
 
 LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
-INSERT INTO `orders` VALUES (6,14,9,14);
+INSERT INTO `orders` VALUES (9,3,1,8,2.5),(10,3,5,1,2);
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -165,4 +197,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-07-17 15:34:38
+-- Dump completed on 2023-08-14 17:49:52
