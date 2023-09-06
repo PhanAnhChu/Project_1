@@ -1,0 +1,1 @@
+server=localhost;userid=pf1121;password=pf1121;port=3306;database=MiniMart
