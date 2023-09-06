@@ -33,6 +33,7 @@ namespace ConsoleApp
                     case 0: // Main Menu
                         orders.Clear();
                         screen = MainMenu(GetLoginStatus(loginList));
+
                         break;
 
                     case 1: // Choose Shift, then Login
@@ -195,24 +196,32 @@ namespace ConsoleApp
                         break;
 
                     case 4:
-                        bool IsReportTime = false;
-                        shiftValue = GetCurrentShiftValue();
+                        // bool IsReportTime = false;
+                        // shiftValue = GetCurrentShiftValue();
                         list = new();
-                        Cashier? reporter = null;
+                        Cashier? reporter = null; // null;
 
-                        for (int i = 0; i < loginList.Count; ++i)
-                            if (loginList[i].Count > 0 && shiftValue != i + 1) {
-                                list = loginList[i];
-                                reporter = ChooseCashierScreen(list); // Only return null if User enter 'Esc'
-                                IsReportTime = true;
+                        foreach (List<Cashier> cashiers in loginList) {
+                            if (cashiers.Count > 0) {
+                                list = cashiers;
+                                reporter = ChooseCashierScreen(list);
                                 break;
                             }
-                        
-                        if (!IsReportTime) {
-                            Alert("Invalid report time! Please try again later.", 28, 14, ConsoleColor.Red, cls: true);
-                            screen = 0;
-                            break;
                         }
+
+                        // for (int i = 0; i < loginList.Count; ++i)
+                        //     if (loginList[i].Count > 0 && shiftValue != i + 1) {
+                        //         list = loginList[i];
+                        //         reporter = ChooseCashierScreen(list); // Only return null if User enter 'Esc'
+                        //         IsReportTime = true;
+                        //         break;
+                        //     }
+                        
+                        // if (!IsReportTime) {
+                        //     Alert("Invalid report time! Please try again later.", 28, 14, ConsoleColor.Red, cls: true);
+                        //     screen = 0;
+                        //     break;
+                        // }
 
                         if (reporter != null) {
                             while (true) {
@@ -230,7 +239,7 @@ namespace ConsoleApp
                                             continue;
                                         
                                         else if (cashier.Id == i) {
-                                            Alert($"Reporter: {reporter.Name} - Id: {reporter.Id}\nConfirmer: {cashier.Name} - Id: {cashier.Name}\nAre you sure to report this ? (Y/N)", 4, 10, ConsoleColor.Yellow, cls: true);
+                                            Alert($"Reporter: {reporter.Name} - Id: {reporter.Id}\nConfirmer: {cashier.Name} - Id: {cashier.Id}\nAre you sure to report this ? (Y/N)", 4, 10, ConsoleColor.Yellow, interrupt:false, cls: true);
 
                                             if (GetYNKey()) {
                                                 if (sbll.AddShift(BeginTime, DateTime.Now, reporter.Id, total, actual, cashier.Id)) {
